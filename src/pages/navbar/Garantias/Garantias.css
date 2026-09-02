@@ -1,0 +1,84 @@
+.shipping-page {
+  padding: 2.5rem 3rem 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+
+.shipping-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.shipping-header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.9rem;
+}
+
+.shipping-header p {
+  color: var(--text-muted);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.shipping-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.shipping-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.shipping-card:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-3px);
+}
+
+.shipping-card h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.shipping-card p,
+.shipping-card li {
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.shipping-card ul,
+.shipping-card ol {
+  padding-left: 1.2rem;
+  margin: 0;
+}
+
+.shipping-card-full {
+  grid-column: 1 / -1;
+}
+
+.shipping-contact {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .shipping-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-card-full {
+    grid-column: auto;
+  }
+
+  .shipping-page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+}

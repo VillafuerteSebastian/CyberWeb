@@ -1,0 +1,565 @@
+.orders-admin-page {
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+.orders-admin-container {
+  max-width: 1450px;
+  margin: 0 auto;
+}
+
+.orders-admin-page.blurred {
+  filter: blur(5px);
+  pointer-events: none;
+}
+
+.orders-admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.orders-admin-header h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.9rem;
+}
+
+.orders-admin-header p {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+}
+
+.orders-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.summary-card span {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.summary-card strong {
+  color: var(--text-primary);
+  font-size: 1.4rem;
+}
+
+.orders-filter-bar {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.filter-btn {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-weight: 600;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--border-accent);
+  color: var(--accent);
+}
+
+.filter-btn.active {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.orders-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.orders-sidebar,
+.ticket-card,
+.ticket-content {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+}
+
+.orders-sidebar {
+  padding: 1rem;
+}
+
+.orders-sidebar h2 {
+  margin-top: 0;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.order-list-item {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.order-list-item:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+}
+
+.order-list-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.order-list-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.order-list-top strong {
+  color: var(--text-primary);
+}
+
+.order-list-body p {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.order-list-body small {
+  color: var(--text-faint);
+}
+
+.mini-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.28rem 0.55rem;
+  border-radius: var(--radius-pill);
+}
+
+.mini-status.pending {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.mini-status.accepted {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.mini-status.shipped {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.mini-status.rejected {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.ticket-content {
+  padding: 1.5rem;
+}
+
+.ticket-content h2 {
+  margin-top: 0;
+  color: var(--text-primary);
+}
+
+.date {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.ticket-card {
+  padding: 1.5rem;
+}
+
+.ticket-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.ticket-field {
+  flex: 1;
+  min-width: 220px;
+}
+
+.ticket-field label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.value {
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  color: var(--text-primary);
+}
+
+.status {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  width: 100%;
+  font-weight: 700;
+}
+
+.status.pending {
+  color: var(--warning);
+  background-color: var(--warning-soft);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.status.accepted {
+  color: var(--success);
+  background-color: var(--success-soft);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.status.shipped {
+  color: var(--accent);
+  background-color: var(--accent-soft);
+  border: 1px solid var(--border-accent);
+}
+
+.status.rejected {
+  color: var(--danger);
+  background-color: var(--danger-soft);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.btn-approve {
+  background-color: var(--success);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-approve:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-reject {
+  background-color: var(--danger);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-reject:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-back {
+  background-color: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: default;
+}
+
+.companions-full {
+  width: 100%;
+  background-color: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 15px;
+  box-sizing: border-box;
+}
+
+.companions-full ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.order-items-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.order-items-list li:last-child {
+  border-bottom: none;
+}
+
+.ticket-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.empty-orders {
+  color: var(--text-muted);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(2, 4, 10, 0.7);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 30px;
+  border-radius: var(--radius-lg);
+  width: 600px;
+  max-width: 92%;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-elev-lg);
+}
+
+.modal textarea {
+  width: 100%;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 80px;
+  margin-top: 8px;
+  padding: 10px;
+  resize: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.modal textarea:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.modal-buttons button {
+  padding: 9px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.modal-buttons button:first-child {
+  background-color: var(--bg-base);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.modal-buttons button:last-child {
+  background: var(--accent-gradient);
+  color: #ffffff;
+}
+
+.note-icon-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  color: inherit;
+}
+
+.note-icon-btn:hover {
+  transform: scale(1.1);
+}
+
+.order-items-list.enhanced li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.order-items-list.enhanced li:last-child {
+  border-bottom: none;
+}
+
+.order-item-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  color: var(--text-primary);
+}
+
+.availability-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.availability-btn {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.availability-btn.yes.active {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.availability-btn.no.active {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.availability-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.badge-yes {
+  background: var(--success-soft);
+  color: var(--success);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.badge-no {
+  background: var(--danger-soft);
+  color: var(--danger);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.badge-pending {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.btn-whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-whatsapp:hover {
+  background: #1ebe5d;
+}
+
+@media (max-width: 1100px) {
+  .orders-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .orders-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .orders-admin-page {
+    padding: 1rem;
+  }
+
+  .orders-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .order-items-list li {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}

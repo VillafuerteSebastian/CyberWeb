@@ -1,0 +1,225 @@
+.discounts-page {
+  padding: 2.5rem 3rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+
+.discounts-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.discounts-header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.9rem;
+}
+
+.discounts-header p {
+  color: var(--text-muted);
+}
+
+.discounts-highlight {
+  margin-bottom: 2rem;
+}
+
+.discounts-banner {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-glow);
+  text-align: center;
+}
+
+.discounts-banner h2 {
+  margin: 0 0 0.5rem;
+}
+
+.discounts-banner p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.discounts-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.discount-card {
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+}
+
+.discount-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--border-accent);
+}
+
+.discount-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--danger);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-pill);
+  z-index: 2;
+}
+
+.discount-image {
+  height: 160px;
+  background: var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 1rem;
+}
+
+.discount-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.discount-info {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.discount-brand {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  margin-bottom: 0.2rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.discount-info h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1.02rem;
+  color: var(--text-primary);
+  min-height: 40px;
+}
+
+.discount-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.old-price {
+  color: var(--text-faint);
+  text-decoration: line-through;
+  font-size: 0.85rem;
+}
+
+.new-price {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.discount-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.discount-btn {
+  width: 100%;
+  display: block;
+  text-align: center;
+  border: none;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  padding: 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+.discount-btn:hover {
+  transform: translateY(-1px);
+}
+
+.no-discounts {
+  text-align: center;
+  padding: 3rem;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+}
+
+.loading-state,
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.retry-btn {
+  border: none;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .discounts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .discounts-page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+
+  .discounts-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .discounts-grid {
+    grid-template-columns: 1fr;
+  }
+}

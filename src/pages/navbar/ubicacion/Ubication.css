@@ -1,0 +1,122 @@
+.store-location-page {
+  padding: 2.5rem 3rem 4rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+
+.store-location-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.store-location-header h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.9rem;
+}
+
+.store-location-header p {
+  color: var(--text-muted);
+}
+
+.store-location-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.store-map-card,
+.store-info-card,
+.store-gallery {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.map-container {
+  margin-top: 1rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.map-container iframe {
+  width: 100%;
+  border: none;
+}
+
+.store-info-card h2,
+.store-map-card h2,
+.store-gallery h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.store-info-card p {
+  color: var(--text-secondary);
+  margin-bottom: 1.2rem;
+}
+
+.location-btn {
+  display: inline-block;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  text-decoration: none;
+  padding: 0.8rem 1.3rem;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  transition: transform 0.2s ease;
+  box-shadow: var(--shadow-glow);
+}
+
+.location-btn:hover {
+  transform: translateY(-1px);
+}
+
+.store-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.store-gallery-grid img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+.store-video {
+  margin-top: 1.5rem;
+}
+
+.store-video h3 {
+  margin-bottom: 0.6rem;
+  color: var(--text-primary);
+}
+
+.store-video-player {
+  width: 100%;
+  border-radius: var(--radius-md);
+  background: black;
+  max-height: 420px;
+  border: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 900px) {
+  .store-location-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .store-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .store-location-page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+}

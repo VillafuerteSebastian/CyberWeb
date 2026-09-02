@@ -1,0 +1,142 @@
+/* El footer usa su propia paleta oscura fija (igual que el navbar), en vez
+   del tema claro del resto del sitio, para que se distinga claramente como
+   cierre de página. */
+.site-footer {
+  --footer-bg: #0b0f1a;
+  --footer-surface: #131b2e;
+  --footer-border: rgba(148, 163, 184, 0.18);
+  --footer-text: #f8fafc;
+  --footer-text-secondary: #cbd5e1;
+  --footer-text-muted: #8b98b0;
+  --footer-text-faint: #64748b;
+  --footer-accent: #22d3ee;
+  --footer-accent-2: #a78bfa;
+  --footer-accent-gradient: linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #8b5cf6 100%);
+
+  margin-top: auto;
+  background: var(--footer-bg);
+  border-top: 1px solid var(--footer-border);
+  color: var(--footer-text-muted);
+}
+
+.footer-top {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 3rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+  gap: 1.5rem;
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.footer-logo {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.3));
+}
+
+.footer-brand p {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.footer-social {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.footer-social a {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--footer-surface);
+  border: 1px solid var(--footer-border);
+  color: var(--footer-text-secondary);
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.footer-social a:hover {
+  transform: translateY(-2px);
+  background: var(--footer-accent-gradient);
+  color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.2), 0 8px 24px -8px rgba(34, 211, 238, 0.45);
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.footer-col h4 {
+  color: var(--footer-text);
+  font-size: 0.86rem;
+  margin-bottom: 0.2rem;
+  letter-spacing: 0.02em;
+}
+
+.footer-col a {
+  color: var(--footer-text-muted);
+  font-size: 0.8rem;
+  transition: color 0.2s ease, transform 0.2s ease;
+  width: fit-content;
+}
+
+.footer-col a:hover {
+  color: var(--footer-accent);
+  transform: translateX(3px);
+}
+
+.footer-contact-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: var(--footer-text-muted);
+}
+
+.footer-contact-line svg {
+  color: var(--footer-accent-2);
+  flex-shrink: 0;
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--footer-border);
+  padding: 0.75rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--footer-text-faint);
+}
+
+@media (max-width: 900px) {
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+    padding: 1.5rem 1.5rem 1.25rem;
+  }
+
+  .footer-bottom {
+    padding: 0.75rem 1.5rem;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .footer-top {
+    grid-template-columns: 1fr;
+  }
+}

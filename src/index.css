@@ -1,0 +1,168 @@
+/* ==========================================================================
+   CyberWeb — Design tokens (tema claro + acento cian/violeta)
+   ========================================================================== */
+:root {
+  --bg-void: #eef1f6;
+  --bg-base: #f4f6fa;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #f8fafc;
+  --bg-elevated: #f8fafc;
+  --bg-elevated-hover: #eef2f7;
+
+  --border-subtle: rgba(15, 23, 42, 0.09);
+  --border-strong: rgba(15, 23, 42, 0.18);
+  --border-accent: rgba(14, 116, 144, 0.45);
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  --accent: #0e7490;
+  --accent-strong: #155e75;
+  --accent-2: #6d28d9;
+  --accent-gradient: linear-gradient(135deg, #0891b2 0%, #4f46e5 55%, #7c3aed 100%);
+  --accent-soft: rgba(14, 116, 144, 0.1);
+  --accent-2-soft: rgba(109, 40, 217, 0.1);
+
+  --success: #15803d;
+  --success-soft: rgba(21, 128, 61, 0.1);
+  --danger: #b91c1c;
+  --danger-soft: rgba(185, 28, 28, 0.09);
+  --warning: #b45309;
+  --warning-soft: rgba(180, 83, 9, 0.1);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+
+  --shadow-glow: 0 0 0 1px rgba(8, 145, 178, 0.18), 0 8px 24px -8px rgba(8, 145, 178, 0.35);
+  --shadow-elev-sm: 0 10px 26px -16px rgba(15, 23, 42, 0.18);
+  --shadow-elev-md: 0 18px 36px -18px rgba(15, 23, 42, 0.22);
+  --shadow-elev-lg: 0 28px 60px -24px rgba(15, 23, 42, 0.28);
+
+  --font-display: "Poppins", "Segoe UI", Arial, sans-serif;
+  --font-body: "Inter", "Segoe UI", Arial, sans-serif;
+
+  /* El navbar (.site-navbar) NO es sticky: se desplaza con la página como
+     cualquier header normal. Los sidebars/elementos "sticky" de otras
+     secciones (filtros, carrito, etc.) usan esta variable como su `top` —
+     0 porque una vez que el navbar se desplaza fuera de vista no queda
+     nada arriba para dejarles espacio. Queda centralizada acá por si en
+     el futuro el navbar vuelve a ser sticky, para no tener que tocar cada
+     archivo de nuevo. */
+  --navbar-height: 0px;
+
+  color-scheme: light;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-void);
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(8, 145, 178, 0.07), transparent 45%),
+    radial-gradient(circle at 88% 12%, rgba(109, 40, 217, 0.06), transparent 40%);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+/* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--bg-void);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Quita las flechitas de los input[type=number]: son muy fáciles de rozar
+   por accidente y cambian el precio/stock sin querer. El scroll del mouse
+   sobre un input enfocado también los incrementa/decrementa en Chrome; eso
+   se evita además con un onWheel={(e) => e.currentTarget.blur()} en los
+   inputs numéricos sensibles (precio, precio de oferta, etc.). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.loading {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
