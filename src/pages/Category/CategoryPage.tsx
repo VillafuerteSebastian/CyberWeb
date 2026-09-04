@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { HiChevronDown } from "react-icons/hi2";
+import { HiAdjustmentsHorizontal, HiXMark } from "react-icons/hi2";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
 import { formatPrice } from "../../utils/format";
 import "./CategoryPage.css";
@@ -51,6 +52,7 @@ const CategoryPage = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [sortOrder, setSortOrder] = useState("");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Acordeón de secciones del sidebar de filtros
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -305,6 +307,16 @@ const CategoryPage = () => {
     );
   };
 
+  const activeFilterCount = [
+    selectedBrand,
+    selectedSubcategoria,
+    selectedTipo,
+    minPrice,
+    maxPrice,
+    sortOrder,
+    onlyInStock ? "stock" : "",
+  ].filter(Boolean).length;
+
   const resetFilters = () => {
     setSelectedBrand("");
     setSelectedSubcategoria(subcategoria || "");
@@ -329,14 +341,60 @@ return (
       </p>
     </div>
 
+    {!loading && products.length > 0 && (
+      <div className="mobile-filters-bar">
+        <button
+          type="button"
+          className="mobile-filters-toggle"
+          onClick={() => setMobileFiltersOpen(true)}
+        >
+          <HiAdjustmentsHorizontal />
+          <span>Filtros</span>
+          {activeFilterCount > 0 && (
+            <span className="mobile-filters-count">{activeFilterCount}</span>
+          )}
+        </button>
+
+        <select
+          className="mobile-sort-select"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+          aria-label="Ordenar por"
+        >
+          <option value="">Ordenar: relevancia</option>
+          <option value="price-asc">Precio: menor a mayor</option>
+          <option value="price-desc">Precio: mayor a menor</option>
+          <option value="name-asc">Nombre: A-Z</option>
+          <option value="name-desc">Nombre: Z-A</option>
+        </select>
+      </div>
+    )}
+
+    {mobileFiltersOpen && (
+      <div
+        className="mobile-filters-backdrop"
+        onClick={() => setMobileFiltersOpen(false)}
+      />
+    )}
+
     <div className="category-layout">
       {!loading && products.length > 0 && (
-        <aside className="filters-sidebar">
+        <aside className={`filters-sidebar ${mobileFiltersOpen ? "mobile-open" : ""}`}>
           <div className="filters-sidebar-header">
             <h3>Filtros</h3>
-            <button className="reset-filters-btn" onClick={resetFilters}>
-              Limpiar
-            </button>
+            <div className="filters-sidebar-header-actions">
+              <button className="reset-filters-btn" onClick={resetFilters}>
+                Limpiar
+              </button>
+              <button
+                type="button"
+                className="mobile-filters-close"
+                onClick={() => setMobileFiltersOpen(false)}
+                aria-label="Cerrar filtros"
+              >
+                <HiXMark />
+              </button>
+            </div>
           </div>
 
           <FilterSection id="ordenar" title="Ordenar por">
@@ -435,6 +493,14 @@ return (
               Solo disponibles
             </label>
           </FilterSection>
+
+          <button
+            type="button"
+            className="mobile-filters-apply"
+            onClick={() => setMobileFiltersOpen(false)}
+          >
+            Ver {filteredProducts.length} producto{filteredProducts.length !== 1 ? "s" : ""}
+          </button>
         </aside>
       )}
 

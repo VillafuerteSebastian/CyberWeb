@@ -7,10 +7,9 @@ import {
   HiOutlineCreditCard,
   HiOutlineChatBubbleLeftRight,
 } from "react-icons/hi2";
+import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
-import { getCategoryData, categoryData } from "../../data/categoryData";
-import type { CategoryItem } from "../../data/categoryData";
 import RoutePrefetcher from "../../components/RoutePrefetcher";
 import { formatPrice } from "../../utils/format";
 
@@ -96,6 +95,19 @@ const ProductCard = memo(({ product, onAddToCart, onNavigate }: {
         {lowStock && (
           <span className="low-stock-badge">¡Últimas {product.stock}!</span>
         )}
+
+        {/* Versión compacta (solo móvil): ícono flotando sobre la imagen,
+            en vez de un botón de texto a todo lo ancho que alarga la
+            tarjeta — así entra más contenido en pantalla sin scroll. */}
+        <button
+          type="button"
+          className="add-cart-fab"
+          disabled={!isAvailable}
+          onClick={handleAddToCart}
+          aria-label={isAvailable ? "Agregar al carrito" : "No disponible"}
+        >
+          <FaShoppingCart />
+        </button>
       </div>
 
       {product.marca && <p className="product-card-brand">{product.marca}</p>}
@@ -137,7 +149,6 @@ const Home = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -178,20 +189,6 @@ const Home = () => {
     };
 
     fetchProducts();
-  }, []);
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await getCategoryData();
-        setCategories(data.slice(0, 6));
-      } catch (error) {
-        console.error("Error cargando categorías destacadas:", error);
-        setCategories(categoryData.slice(0, 6));
-      }
-    };
-
-    loadCategories();
   }, []);
 
   const handleAddToCart = useCallback((product: Product) => {
@@ -250,25 +247,6 @@ const Home = () => {
           </div>
         ))}
       </section>
-
-      {categories.length > 0 && (
-        <section className="home-categories-section">
-          <h2 className="section-title">Compra por categoría</h2>
-
-          <div className="home-categories-grid">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/catalogo?categoria=${category.id}`}
-                className="home-category-card"
-              >
-                <span className="home-category-icon">{category.icon}</span>
-                <span>{category.name}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="products-section">
         <h2 className="section-title">Productos destacados</h2>

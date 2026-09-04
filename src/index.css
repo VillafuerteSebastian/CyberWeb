@@ -16,7 +16,11 @@
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
-  --text-faint: #94a3b8;
+  /* Antes #94a3b8: contraste de solo 2.56:1 sobre blanco (falla incluso el
+     mínimo AA de texto grande, 3:1) — se usaba en textos chicos reales
+     (marca de producto, "IVA incluido", separadores de precio), no solo
+     decorativos. Este tono da 4.58:1, cumple AA de texto normal. */
+  --text-faint: #697787;
 
   --accent: #0e7490;
   --accent-strong: #155e75;

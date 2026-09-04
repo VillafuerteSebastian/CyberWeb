@@ -10,6 +10,10 @@ import {
   FaSearch,
   FaTiktok,
   FaUserShield,
+  FaUser,
+  FaSignOutAlt,
+  FaShoppingCart,
+  FaChevronRight,
 } from "react-icons/fa";
 import "./navbar.css";
 import { categoryData, getCategoryData } from "../../data/categoryData";
@@ -187,6 +191,23 @@ const Navbar = () => {
     <>
       <div className="site-navbar">
       <div className={`top-navbar ${isAuthPage ? "auth-navbar" : ""}`}>
+        {/* Como en la referencia (ExtremeTech): el hamburguesa que abre las
+            categorías vive junto al logo, arriba, no perdido en otra fila. */}
+        {!isAuthPage && (
+          <button
+            type="button"
+            className="mobile-menu-trigger"
+            onClick={() => {
+              setMobileSearchOpen(false);
+              setMobileActiveTab("categories");
+              setMobileMenuOpen(true);
+            }}
+            aria-label="Ver categorías"
+          >
+            <FaBars />
+          </button>
+        )}
+
         <Link to={homeRoute} className="logo">
           <img src="/logo.png" alt="CyberWeb Logo" className="logo-img" />
         </Link>
@@ -205,22 +226,6 @@ const Navbar = () => {
         {isAuthPage && <div className="auth-spacer" />}
 
         <div className="nav-actions">
-          {/* Botones móviles */}
-          <button 
-            className="mobile-search-toggle" 
-            onClick={() => setMobileSearchOpen(!mobileSearchOpen)}
-            aria-label="Buscar"
-          >
-            <FaSearch />
-          </button>
-          
-          <button 
-            className="mobile-menu-toggle" 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Menú"
-          >
-            <FaBars />
-          </button>
           <div className="social-icons">
             <a
               href="https://www.facebook.com/CyberPuntarenas"
@@ -264,7 +269,7 @@ const Navbar = () => {
           </div>
 
           {user ? (
-            <div className="user-actions">
+            <div className="user-actions user-actions-desktop">
               <Link to="/mi-cuenta" className="account-link">
                 Hola {displayName}
               </Link>
@@ -334,7 +339,7 @@ const Navbar = () => {
               </span>
             </div>
           ) : (
-            <Link to="/login" className="login-link">
+            <Link to="/login" className="login-link login-link-desktop">
               Acceso / Registro
             </Link>
           )}
@@ -344,6 +349,38 @@ const Navbar = () => {
             {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
           </Link>
         </div>
+
+        {/* Todo integrado arriba en móvil (buscar, cuenta, carrito), sin
+            barra aparte abajo — junto al logo y al hamburguesa. */}
+        {!isAuthPage && (
+          <>
+            <button
+              type="button"
+              className={`mobile-search-toggle ${mobileSearchOpen ? "active" : ""}`}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setMobileSearchOpen((prev) => !prev);
+              }}
+              aria-label="Buscar"
+            >
+              <FaSearch />
+            </button>
+
+            <Link
+              to={user ? "/mi-cuenta" : "/login"}
+              className="mobile-account-toggle"
+              aria-label={user ? `Cuenta de ${displayName}` : "Acceso / Registro"}
+              title={user ? `Hola ${displayName}` : "Acceso / Registro"}
+            >
+              {isAdmin ? <FaUserShield /> : <FaUser />}
+            </Link>
+
+            <Link to="/cart" className="mobile-cart-icon" aria-label="Carrito">
+              <FaShoppingCart />
+              {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="category-navbar-modern">
@@ -451,7 +488,7 @@ const Navbar = () => {
               onClick={() => setMobileActiveTab("links")}
             >
               <FaBars />
-              <span>Redes y Ubicación</span>
+              <span>Menú</span>
             </button>
           </div>
 
@@ -474,10 +511,10 @@ const Navbar = () => {
                         <span className="category-side-icon">{category.icon}</span>
                         <span>{category.name}</span>
                         <span className="category-arrow">
-                          {selectedCategory?.id === category.id ? "×" : ">"}
+                          <FaChevronRight />
                         </span>
                       </button>
-                      
+
                       {/* Subcategorías debajo de la categoría seleccionada */}
                       {selectedCategory?.id === category.id && (
                         <div className="subcategory-list">
@@ -485,7 +522,8 @@ const Navbar = () => {
                             <div key={`${category.id}-${section.title}`}>
                               <Link
                                 to={section.to}
-                                onClick={() => setMenuOpen(false)}
+                                className="subcategory-title"
+                                onClick={() => setMobileMenuOpen(false)}
                               >
                                 {section.title}
                               </Link>
@@ -494,7 +532,8 @@ const Navbar = () => {
                                   <Link
                                     key={link.key || link.to}
                                     to={link.to}
-                                    onClick={() => setMenuOpen(false)}
+                                    className="subcategory-link"
+                                    onClick={() => setMobileMenuOpen(false)}
                                   >
                                     {link.label}
                                   </Link>
@@ -512,6 +551,74 @@ const Navbar = () => {
 
             {mobileActiveTab === "links" && (
               <div className="mobile-links-content">
+                {/* Cuenta */}
+                <div className="mobile-account-section">
+                  {user ? (
+                    <>
+                      <Link
+                        to="/mi-cuenta"
+                        className="mobile-account-greeting"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <span className="mobile-account-avatar">
+                          {isAdmin ? <FaUserShield /> : <FaUser />}
+                        </span>
+                        <span>
+                          <strong>Hola, {displayName}</strong>
+                          <small>Ver mi cuenta</small>
+                        </span>
+                      </Link>
+
+                      {isAdmin && (
+                        <div className="mobile-admin-links">
+                          <Link
+                            to="/admin/add-product"
+                            className="mobile-nav-link"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Agregar producto
+                          </Link>
+                          <Link
+                            to="/admin/categories"
+                            className="mobile-nav-link"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Gestión de categorías
+                          </Link>
+                          <Link
+                            to="/admin/orders"
+                            className="mobile-nav-link"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            Lista de pedidos
+                          </Link>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        className="mobile-logout-button"
+                        onClick={() => {
+                          handleLogout();
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <FaSignOutAlt />
+                        <span>Cerrar sesión</span>
+                      </button>
+                    </>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="mobile-login-button"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <FaUser />
+                      <span>Acceso / Registro</span>
+                    </Link>
+                  )}
+                </div>
+
                 {/* Enlaces de navegación */}
                 <div className="mobile-nav-links">
                   <Link to="/tiendas" className="mobile-nav-link" onClick={() => setMobileMenuOpen(false)}>

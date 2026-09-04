@@ -312,14 +312,18 @@ const CartPage = () => {
 
             {cart.map((item) => (
               <div key={`${item.id}-${item.variant ?? ""}`} className="cart-row">
+                <button
+                  className="remove-btn"
+                  onClick={() => removeFromCart(item.id, item.variant)}
+                  aria-label={`Quitar ${item.name}`}
+                >
+                  ✕
+                </button>
+
                 <div className="product-info">
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeFromCart(item.id, item.variant)}
-                  >
-                    ✕
-                  </button>
-                  <img src={item.image} alt={item.name} />
+                  <div className="cart-row-media">
+                    <img src={item.image} alt={item.name} />
+                  </div>
                   <div className="product-info-text">
                     <span>{item.name}</span>
                     {item.variant && (
@@ -328,17 +332,28 @@ const CartPage = () => {
                   </div>
                 </div>
 
-                <div>{formatPrice(item.price)}</div>
-
-                <div className="quantity-controls">
-                  <button onClick={() => decreaseQuantity(item.id, item.variant)}>-</button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => increaseQuantity(item.id, item.variant)}>+</button>
+                <div className="cart-field">
+                  <span className="cart-field-label">Precio</span>
+                  <span className="cart-field-value">{formatPrice(item.price)}</span>
                 </div>
 
-                <div className="subtotal">
-                  {formatPrice(item.price * item.quantity)}
+                <div className="cart-field">
+                  <span className="cart-field-label">Cantidad</span>
+                  <div className="quantity-controls">
+                    <button onClick={() => decreaseQuantity(item.id, item.variant)}>-</button>
+                    <span>{item.quantity}</span>
+                    <button onClick={() => increaseQuantity(item.id, item.variant)}>+</button>
+                  </div>
                 </div>
+
+                <div className="cart-field cart-field-subtotal">
+                  <span className="cart-field-label">Subtotal</span>
+                  <span className="subtotal">
+                    {formatPrice(item.price * item.quantity)}
+                  </span>
+                </div>
+
+                <p className="cart-row-tax-note">IVA incluido</p>
               </div>
             ))}
           </div>

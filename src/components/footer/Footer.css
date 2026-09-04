@@ -8,7 +8,9 @@
   --footer-text: #f8fafc;
   --footer-text-secondary: #cbd5e1;
   --footer-text-muted: #8b98b0;
-  --footer-text-faint: #64748b;
+  /* Antes #64748b: 4.02:1 sobre el fondo oscuro del footer, por debajo del
+     4.5:1 que pide AA para texto normal (el copyright se lee a 12px). */
+  --footer-text-faint: #78889f;
   --footer-accent: #22d3ee;
   --footer-accent-2: #a78bfa;
   --footer-accent-gradient: linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #8b5cf6 100%);
@@ -135,8 +137,42 @@
   }
 }
 
+/* En celular el footer se quedaba enorme: descripción + 4 redes + 4 + 4 + 3
+   enlaces, todo apilado en una sola columna. Se queda en 2 columnas (marca
+   junto a Tienda, Empresa junto a Contacto) y todo un poco más compacto,
+   para que no sea una pantalla entera de puro scroll. */
 @media (max-width: 560px) {
   .footer-top {
-    grid-template-columns: 1fr;
+    gap: 1.25rem 1rem;
+    padding: 1.25rem 1.25rem 1rem;
+  }
+
+  .footer-brand p {
+    font-size: 0.76rem;
+    line-height: 1.4;
+  }
+
+  .footer-social {
+    gap: 0.4rem;
+  }
+
+  .footer-social a {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .footer-col {
+    gap: 0.4rem;
+  }
+
+  .footer-col h4 {
+    font-size: 0.8rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .footer-col a,
+  .footer-contact-line {
+    font-size: 0.74rem;
   }
 }

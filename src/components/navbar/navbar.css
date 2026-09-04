@@ -2,7 +2,8 @@
    sitio (que ahora es claro), para que siempre se distinga como cabecera. */
 .top-navbar,
 .category-navbar-modern,
-.category-navbar-modern-mobile {
+.category-navbar-modern-mobile,
+.bottom-tab-bar {
   --nav-bg: #0b0f1a;
   --nav-bg-alt: #0f172a;
   --nav-surface: #131b2e;
@@ -279,7 +280,11 @@
   color: var(--nav-accent);
 }
 
-/* ===== PANEL GRANDE ===== */
+/* ===== PANEL GRANDE =====
+   A diferencia del resto de la navbar (oscura), el contenido del panel de
+   categorías vive en el tema claro del sitio: fondo blanco y texto oscuro,
+   para que las letras se lean bien sin depender de los tonos oscuros de
+   --nav-*. Solo la barra/gatillo que lo abre se queda oscura. */
 .categories-panel {
   position: absolute;
   top: 100%;
@@ -288,20 +293,20 @@
   min-height: 440px;
   display: grid;
   grid-template-columns: 300px 1fr;
-  background: var(--nav-elevated);
-  color: var(--nav-text);
-  border: 1px solid var(--nav-border);
+  background: #ffffff;
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
   border-top: none;
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--nav-shadow-lg);
+  box-shadow: var(--shadow-elev-lg);
   z-index: 1200;
 }
 
 /* ===== COLUMNA IZQUIERDA ===== */
 .categories-sidebar {
-  background: var(--nav-surface);
-  border-right: 1px solid var(--nav-border);
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
   padding: 0.7rem 0;
 }
 
@@ -315,28 +320,28 @@
   padding: 0.9rem 1.25rem;
   text-align: left;
   cursor: pointer;
-  color: var(--nav-text-secondary);
+  color: var(--text-secondary);
   font-size: 0.95rem;
   border-left: 3px solid transparent;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .category-side-item:hover {
-  background: var(--nav-accent-soft);
-  color: var(--nav-accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .category-side-item.active {
-  background: var(--nav-accent-soft);
-  color: var(--nav-accent);
-  border-left-color: var(--nav-accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-left-color: var(--accent);
   font-weight: 700;
 }
 
 .category-side-icon {
   display: inline-flex;
   font-size: 1.2rem;
-  color: var(--nav-accent-2);
+  color: var(--accent-2);
 }
 
 /* ===== PANEL DERECHO ===== */
@@ -346,7 +351,7 @@
   grid-template-columns: repeat(3, minmax(190px, 1fr));
   gap: 2rem 2.5rem;
   align-content: start;
-  background: var(--nav-elevated);
+  background: #ffffff;
 }
 
 .category-section-block {
@@ -358,13 +363,13 @@
   margin: 0 0 1rem;
   font-size: 1.02rem;
   font-weight: 700;
-  color: var(--nav-text);
+  color: var(--text-primary);
   text-decoration: none;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .section-title-link:hover {
-  color: var(--nav-accent);
+  color: var(--accent-strong);
   transform: translateX(4px);
 }
 
@@ -376,13 +381,13 @@
 
 .category-section-links a {
   text-decoration: none;
-  color: var(--nav-text-muted);
+  color: var(--text-muted);
   font-size: 0.92rem;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .category-section-links a:hover {
-  color: var(--nav-accent);
+  color: var(--accent-strong);
   transform: translateX(4px);
 }
 
@@ -459,17 +464,33 @@
 }
 
 @media (max-width: 768px) {
+  /* El "modo teléfono" no reutiliza la barra superior de escritorio: ahí
+     vivían buscador, redes, cuenta, admin y carrito, todo apretado en una
+     fila. En el teléfono esa fila queda como en la referencia (ExtremeTech):
+     hamburguesa a la izquierda del logo (abre las categorías en un panel
+     deslizable desde el lado) y carrito a la derecha, siempre a la vista. */
   .top-navbar {
-    padding: 0.6rem 0.9rem;
+    flex-wrap: nowrap;
+    padding: 0.7rem 1.1rem;
     min-height: auto;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+
+  .logo {
+    flex-shrink: 0;
   }
 
   .logo-img {
-    height: 28px !important;
+    height: 26px !important;
   }
 
+  /* Se queda siempre en el DOM (no "display:none") para poder animar la
+     entrada/salida — un simple cambio de display no se puede transicionar,
+     así que se anima con opacidad + un pequeño desliz hacia abajo, y
+     "visibility" se retrasa en el cierre para que no se pueda ni tocar ni
+     tabular hasta que termine de desaparecer. */
   .search-bar {
-    display: none;
     position: absolute;
     top: 100%;
     left: 0;
@@ -478,88 +499,109 @@
     padding: 0.75rem;
     border-bottom: 1px solid var(--nav-border);
     z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.22s ease,
+      visibility 0s linear 0.22s;
   }
 
   .search-bar.active {
-    display: flex;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition: opacity 0.22s ease, transform 0.22s ease,
+      visibility 0s linear 0s;
   }
 
   .search-bar input {
-    padding: 0.6rem 0.8rem;
-    font-size: 14px;
-  }
-
-  .social-icons {
-    display: none;
-  }
-
-  .nav-actions {
-    gap: 0.5rem;
-  }
-
-  .user-actions {
-    font-size: 12px;
-  }
-
-  .mobile-menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    background: var(--nav-surface);
-    border: 1px solid var(--nav-border);
-    cursor: pointer;
-    color: var(--nav-text);
+    padding: 0.7rem 0.9rem;
     font-size: 16px;
-    border-radius: var(--radius-sm);
-    transition: background 0.2s ease;
   }
 
-  .mobile-menu-toggle:hover {
-    background: var(--nav-accent-soft);
-    color: var(--nav-accent);
+  .social-icons,
+  .nav-actions {
+    display: none;
   }
 
   .category-navbar-modern {
     display: none;
   }
 
-  .mobile-search-toggle {
+  .mobile-menu-trigger {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 34px;
     height: 34px;
+    flex-shrink: 0;
     background: var(--nav-surface);
     border: 1px solid var(--nav-border);
-    cursor: pointer;
-    color: var(--nav-text);
-    font-size: 15px;
     border-radius: var(--radius-sm);
-    transition: background 0.2s ease;
+    color: var(--nav-text);
+    font-size: 16px;
+    cursor: pointer;
   }
 
-  .mobile-search-toggle:hover {
+  .mobile-menu-trigger:active {
     background: var(--nav-accent-soft);
     color: var(--nav-accent);
+  }
+
+  /* Buscar, cuenta y carrito quedan agrupados a la derecha (todo integrado
+     arriba, nada abajo): el primero de los tres lleva el margin-left:auto
+     que empuja a todo el grupo contra el borde derecho. */
+  .mobile-search-toggle,
+  .mobile-account-toggle,
+  .mobile-cart-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    background: var(--nav-surface);
+    border: 1px solid var(--nav-border);
+    border-radius: var(--radius-sm);
+    color: var(--nav-text);
+    font-size: 15px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .mobile-search-toggle {
+    margin-left: auto;
+  }
+
+  .mobile-search-toggle.active,
+  .mobile-search-toggle:active,
+  .mobile-account-toggle:active,
+  .mobile-cart-icon:active {
+    background: var(--nav-accent-soft);
+    color: var(--nav-accent);
+  }
+
+  .mobile-cart-icon .cart-badge {
+    top: -6px;
+    right: -6px;
   }
 }
 
 @media (min-width: 769px) {
-  .mobile-search-toggle {
+  .mobile-menu-trigger,
+  .mobile-search-toggle,
+  .mobile-account-toggle,
+  .mobile-cart-icon {
     display: none;
-  }
-
-  .mobile-menu-toggle {
-    display: none;
-  }
-
-  .category-navbar-modern-mobile {
-    display: none !important;
   }
 }
 
+/* Panel deslizable desde el borde izquierdo (igual que la referencia:
+   ExtremeTech), no una tarjeta centrada — se siente como el cajón de
+   navegación de una app, no como un popup. */
 .category-navbar-modern-mobile {
   display: none;
   position: fixed;
@@ -567,8 +609,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(2, 4, 10, 0.72);
-  backdrop-filter: blur(4px);
+  background: rgba(2, 4, 10, 0.55);
+  backdrop-filter: blur(2px);
   z-index: 9999;
 }
 
@@ -578,42 +620,52 @@
 
 .categories-dropdown-mobile {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0.9);
-  width: 90%;
-  max-width: 400px;
-  max-height: 85vh;
-  background: var(--nav-elevated);
-  border: 1px solid var(--nav-border);
-  transition: transform 0.3s ease, opacity 0.3s ease;
-  opacity: 0;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(310px, 85vw);
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  background: #ffffff;
+  border: none;
+  border-right: 1px solid var(--border-subtle);
+  transition: transform 0.28s ease;
+  transform: translateX(-100%);
+  opacity: 1;
   overflow-y: auto;
   overflow-x: hidden;
   box-shadow: var(--nav-shadow-lg);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   z-index: 10000;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  display: flex;
+  flex-direction: column;
 }
 
 .category-navbar-modern-mobile.active .categories-dropdown-mobile {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
+  transform: translateX(0);
 }
 
 .category-navbar-modern-mobile .category-trigger {
   width: 100%;
-  min-height: 44px;
+  height: auto;
+  min-height: 52px;
+  flex-shrink: 0;
   padding: 0.6rem 1rem;
   font-size: 13px;
-  background: var(--nav-bg);
-  color: var(--nav-text);
+  background: #ffffff;
+  color: var(--text-primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--nav-border);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+}
+
+.category-navbar-modern-mobile .category-trigger svg {
+  color: var(--text-secondary);
 }
 
 .category-navbar-modern-mobile .category-trigger::after {
@@ -621,7 +673,7 @@
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
-  color: var(--nav-text-muted);
+  color: var(--text-muted);
 }
 
 .category-navbar-modern-mobile .categories-panel {
@@ -634,44 +686,66 @@
   border: none;
   border-radius: 0;
   box-shadow: none;
-  background: var(--nav-elevated);
+  background: #ffffff;
 }
 
 .category-navbar-modern-mobile .categories-sidebar {
   border-right: none;
-  border-bottom: 1px solid var(--nav-border);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  background: var(--nav-elevated);
+  background: #ffffff;
 }
 
-.category-navbar-modern-mobile .categories-sidebar::-webkit-scrollbar {
-  height: 4px;
+/* Filas planas con separador fino, ícono discreto y etiqueta en mayúsculas
+   — como la lista de categorías de la referencia, no como un botón/pill. */
+.category-navbar-modern-mobile .category-side-item {
+  border-left: none;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  padding: 0.85rem 1.1rem;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.category-navbar-modern-mobile .category-side-icon {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+
+.category-navbar-modern-mobile .category-side-item:hover {
+  background: var(--bg-base);
+  color: var(--text-primary);
 }
 
 .category-navbar-modern-mobile .category-arrow {
   margin-left: auto;
   font-size: 14px;
-  color: var(--nav-text-faint);
+  color: var(--text-faint);
   transition: transform 0.2s ease;
 }
 
+/* La categoría abierta se rellena con el degradado de acento (como el rojo
+   de la referencia al expandir): deja clarísimo cuál está abierta entre
+   una lista larga, en vez de un simple tinte gris. */
 .category-navbar-modern-mobile .category-side-item.active {
-  background: var(--nav-accent-soft);
-  color: var(--nav-accent);
+  background: var(--accent-gradient);
+  color: #ffffff;
+}
+
+.category-navbar-modern-mobile .category-side-item.active .category-side-icon {
+  color: #ffffff;
 }
 
 .category-navbar-modern-mobile .category-side-item.active .category-arrow {
   transform: rotate(90deg);
-  color: var(--nav-accent);
+  color: #ffffff;
 }
 
 .category-navbar-modern-mobile .subcategory-list {
-  background: var(--nav-surface);
-  border-left: 3px solid var(--nav-accent);
-  margin: 0.25rem 0;
-  padding: 0.5rem;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border-subtle);
+  margin: 0;
+  padding: 0.4rem 0.5rem 0.6rem 2.5rem;
   animation: slideDown 0.3s ease;
 }
 
@@ -689,17 +763,23 @@
 .category-navbar-modern-mobile .subcategory-title {
   display: block;
   text-decoration: none;
-  color: var(--nav-text);
-  font-size: 0.8rem;
-  font-weight: 600;
-  margin: 0.25rem 0;
+  color: var(--text-primary);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0.85rem 0 0.3rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: background 0.2s ease;
 }
 
+.category-navbar-modern-mobile .subcategory-list > div:first-child > .subcategory-title {
+  margin-top: 0.25rem;
+}
+
 .category-navbar-modern-mobile .subcategory-title:hover {
-  background: var(--nav-elevated-hover);
+  background: var(--bg-elevated-hover);
 }
 
 .category-navbar-modern-mobile .subcategory-links {
@@ -709,7 +789,7 @@
 .category-navbar-modern-mobile .subcategory-link {
   display: block;
   text-decoration: none;
-  color: var(--nav-text-muted);
+  color: var(--text-muted);
   font-size: 0.75rem;
   margin: 0.15rem 0;
   padding: 0.2rem 0.5rem;
@@ -718,47 +798,48 @@
 }
 
 .category-navbar-modern-mobile .subcategory-link:hover {
-  background: var(--nav-elevated-hover);
-  color: var(--nav-accent);
+  background: var(--bg-elevated-hover);
+  color: var(--accent-strong);
 }
 
 .category-navbar-modern-mobile .mobile-nav-links {
-  border-top: 1px solid var(--nav-border);
+  border-top: 1px solid var(--border-subtle);
   padding: 1rem;
-  background: var(--nav-surface);
+  background: #ffffff;
 }
 
 .category-navbar-modern-mobile .mobile-nav-link {
   display: block;
   text-decoration: none;
-  color: var(--nav-text);
+  color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0.75rem 1rem;
   margin: 0.25rem 0;
   border-radius: var(--radius-sm);
-  transition: background 0.2s ease, color 0.2s ease;
-  background: var(--nav-elevated);
-  border: 1px solid var(--nav-border);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-elev-sm);
 }
 
 .category-navbar-modern-mobile .mobile-nav-link:hover {
-  background: var(--nav-accent-gradient);
-  color: #04121a;
+  background: var(--accent-gradient);
+  color: #ffffff;
   transform: translateX(4px);
 }
 
 .category-navbar-modern-mobile .mobile-social-section {
-  border-top: 1px solid var(--nav-border);
+  border-top: 1px solid var(--border-subtle);
   padding: 1rem;
-  background: var(--nav-surface);
+  background: #ffffff;
   margin-top: 0.5rem;
 }
 
 .category-navbar-modern-mobile .mobile-social-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--nav-text);
+  color: var(--text-primary);
   margin: 0 0 1rem 0;
   text-align: center;
 }
@@ -775,11 +856,12 @@
   align-items: center;
   justify-content: center;
   padding: 0.75rem;
-  background: var(--nav-elevated);
-  border: 1px solid var(--nav-border);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-elev-sm);
   text-decoration: none;
-  color: var(--nav-text);
+  color: var(--text-primary);
   font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -788,27 +870,28 @@
 
 .category-navbar-modern-mobile .mobile-social-link svg {
   font-size: 1.2rem;
-  color: var(--nav-text-muted);
+  color: var(--text-muted);
   transition: color 0.2s ease;
 }
 
 .category-navbar-modern-mobile .mobile-social-link:hover {
-  background: var(--nav-accent-gradient);
-  color: #04121a;
+  background: var(--accent-gradient);
+  color: #ffffff;
   border-color: transparent;
   transform: translateY(-2px);
-  box-shadow: var(--nav-glow);
+  box-shadow: var(--shadow-glow);
 }
 
 .category-navbar-modern-mobile .mobile-social-link:hover svg {
-  color: #04121a;
+  color: #ffffff;
 }
 
 /* Mobile Tab Navigation */
 .category-navbar-modern-mobile .mobile-tab-navigation {
   display: flex;
-  border-bottom: 1px solid var(--nav-border);
-  background: var(--nav-surface);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-base);
 }
 
 .category-navbar-modern-mobile .mobile-tab-button {
@@ -822,7 +905,7 @@
   border: none;
   border-bottom: 3px solid transparent;
   cursor: pointer;
-  color: var(--nav-text-muted);
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 500;
   transition: all 0.2s ease;
@@ -835,19 +918,20 @@
 }
 
 .category-navbar-modern-mobile .mobile-tab-button:hover {
-  background: var(--nav-accent-soft);
-  color: var(--nav-accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .category-navbar-modern-mobile .mobile-tab-button.active {
-  color: var(--nav-accent);
-  border-bottom-color: var(--nav-accent);
-  background: var(--nav-accent-soft);
+  color: var(--accent-strong);
+  border-bottom-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 /* Mobile Tab Content */
 .category-navbar-modern-mobile .mobile-tab-content {
-  max-height: 60vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -865,6 +949,114 @@
   padding: 0 0 1rem 0;
   background: transparent;
   margin-bottom: 1rem;
+}
+
+/* ===== CUENTA (panel móvil) ===== */
+.category-navbar-modern-mobile .mobile-account-section {
+  padding: 1rem 1rem 0;
+}
+
+.category-navbar-modern-mobile .mobile-account-greeting {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  box-shadow: var(--shadow-elev-sm);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.category-navbar-modern-mobile .mobile-account-greeting:hover {
+  background: var(--accent-soft);
+  border-color: var(--border-accent);
+}
+
+.category-navbar-modern-mobile .mobile-account-greeting > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.category-navbar-modern-mobile .mobile-account-greeting strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-navbar-modern-mobile .mobile-account-greeting small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.category-navbar-modern-mobile .mobile-account-avatar {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  font-size: 1.05rem;
+}
+
+.category-navbar-modern-mobile .mobile-admin-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.category-navbar-modern-mobile .mobile-admin-links .mobile-nav-link {
+  border-color: var(--accent-2-soft);
+  color: var(--accent-2);
+}
+
+.category-navbar-modern-mobile .mobile-logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(185, 28, 28, 0.25);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.category-navbar-modern-mobile .mobile-logout-button:hover {
+  background: rgba(185, 28, 28, 0.16);
+  color: var(--danger);
+}
+
+.category-navbar-modern-mobile .mobile-login-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  background: var(--accent-gradient);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-glow);
 }
 
 .category-navbar-modern-mobile .mobile-social-section {
@@ -932,3 +1124,4 @@
   background: var(--nav-accent-soft);
   color: var(--nav-accent);
 }
+
