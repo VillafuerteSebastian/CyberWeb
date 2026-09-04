@@ -4,7 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { FaUpload, FaTrash, FaEdit, FaStar } from "react-icons/fa";
 import productService, { isOnSale } from "../../services/productService";
 import { formatPrice } from "../../utils/format";
-import { categoryData, getCategoryData } from "../../data/categoryData";
+import {
+  categoryData,
+  getCategoryData,
+  CATEGORIES_UPDATED_EVENT,
+} from "../../data/categoryData";
 import type { CategoryItem } from "../../data/categoryData";
 
 type TipoProducto = {
@@ -86,7 +90,9 @@ const AddProduct = () => {
     e.currentTarget.blur();
   };
 
-  // Load categories dynamically on component mount
+  // Carga las categorías al montar y se refresca sola cuando se invalida
+  // el caché (alta/edición/borrado en /admin/categories), para no depender
+  // de una recarga manual de la página.
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -100,6 +106,11 @@ const AddProduct = () => {
     };
 
     loadCategories();
+
+    window.addEventListener(CATEGORIES_UPDATED_EVENT, loadCategories);
+    return () => {
+      window.removeEventListener(CATEGORIES_UPDATED_EVENT, loadCategories);
+    };
   }, []);
 
   const selectedCategory = useMemo(

@@ -221,6 +221,19 @@ export const resetCategoryCache = (): void => {
   categoryDataCache = null;
 };
 
+// Evento global: se dispara cada vez que se invalida el caché de
+// categorías (alta, edición o borrado de categoría/sección/tipo desde
+// cualquier parte de la app). El Navbar (y cualquier otro componente que
+// muestre categorías) escucha esto para refrescarse solo, sin depender de
+// que el usuario recargue la página a mano — los componentes ya montados
+// no se enteran de otra forma de que el módulo de caché cambió por debajo.
+export const CATEGORIES_UPDATED_EVENT = "categories:updated";
+
+const notifyCategoriesUpdated = (): void => {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(CATEGORIES_UPDATED_EVENT));
+};
+
 // Clear cache
 export const clearCategoryCache = (): void => {
   if (typeof window === "undefined") return;
@@ -232,6 +245,8 @@ export const clearCategoryCache = (): void => {
     console.log("Category cache cleared");
   } catch (error) {
     console.error("Error clearing cache:", error);
+  } finally {
+    notifyCategoriesUpdated();
   }
 };
 

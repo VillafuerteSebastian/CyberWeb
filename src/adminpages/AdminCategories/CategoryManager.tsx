@@ -464,6 +464,7 @@ const CategoryManager = () => {
 
     try {
       await categoryService.deleteCategory(categoryId);
+      clearCategoryCache();
 
       setCategories((prev) =>
         prev.filter((category) => (category._id || category.id) !== categoryId)
@@ -485,6 +486,7 @@ const CategoryManager = () => {
 
     try {
       await categoryService.deleteCategory(sectionId);
+      clearCategoryCache();
 
       setCategories((prev) =>
         prev.map((category) => ({
@@ -508,6 +510,7 @@ const CategoryManager = () => {
 
     try {
       await categoryService.deleteCategory(linkId);
+      clearCategoryCache();
 
       setCategories((prev) =>
         prev.map((category) => ({

@@ -16,7 +16,11 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import "./navbar.css";
-import { categoryData, getCategoryData } from "../../data/categoryData";
+import {
+  categoryData,
+  getCategoryData,
+  CATEGORIES_UPDATED_EVENT,
+} from "../../data/categoryData";
 import type { CategoryItem } from "../../data/categoryData";
 
 const Navbar = () => {
@@ -50,7 +54,11 @@ const Navbar = () => {
 
   const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Load categories dynamically on component mount
+  // Carga las categorías al montar Y cada vez que algo las invalida (el
+  // admin agrega/edita/borra una categoría, sección o tipo desde
+  // /admin/categories, en cualquier pestaña) — sin este listener, el
+  // navbar se queda con la lista que tenía al cargar la página y solo se
+  // pondría al día con una recarga manual completa.
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -68,6 +76,11 @@ const Navbar = () => {
     };
 
     loadCategories();
+
+    window.addEventListener(CATEGORIES_UPDATED_EVENT, loadCategories);
+    return () => {
+      window.removeEventListener(CATEGORIES_UPDATED_EVENT, loadCategories);
+    };
   }, []);
 
   const displayName = useMemo(() => {
