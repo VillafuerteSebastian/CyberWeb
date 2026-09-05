@@ -411,6 +411,22 @@
   flex: 1;
 }
 
+.extra-categoria-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.6rem;
+  align-items: end;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.extra-categoria-picker .form-group {
+  margin: 0;
+}
+
 .add-variant-btn {
   border: none;
   background: var(--accent-gradient);

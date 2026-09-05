@@ -81,38 +81,60 @@ const CategoryPage = () => {
       try {
         setLoading(true);
 
-        const PAGE_SIZE = 100;
-        let page = 1;
         let rawProducts: any[] = [];
 
-        while (true) {
-          const response = await productService.getProducts({
-            page,
-            limit: PAGE_SIZE,
-            categoria: categoria || undefined,
-          });
+        if (categoria) {
+          // Trae los productos con esta categoría como principal Y los que
+          // la tengan entre sus categorías adicionales.
+          rawProducts = await productService.getProductsByCategoria(categoria);
+        } else {
+          const PAGE_SIZE = 100;
+          let page = 1;
 
-          rawProducts = rawProducts.concat(response.data);
+          while (true) {
+            const response = await productService.getProducts({ page, limit: PAGE_SIZE });
+            rawProducts = rawProducts.concat(response.data);
 
-          if (!response.hasMore) break;
-          page += 1;
+            if (!response.hasMore) break;
+            page += 1;
+          }
         }
 
-        const formattedProducts: Product[] = rawProducts.map((product: any) => ({
-          id: String(product.id || product._id || ""),
-          nombre: product.nombre || "",
-          descripcion: product.descripcion || "",
-          precio: Number(product.precio ?? 0),
-          precio_oferta:
-            product.precio_oferta !== null && product.precio_oferta !== undefined
-              ? Number(product.precio_oferta)
-              : null,
-          categoria: product.categoria || "",
-          marca: product.marca || "",
-          tipos: Array.isArray(product.tipos) ? product.tipos : [],
-          stock: Number(product.stock ?? 0),
-          image: product.image || "/placeholder-product.png",
-        }));
+        const formattedProducts: Product[] = rawProducts.map((product: any) => {
+          // Si el producto llega por una categoría adicional (no la
+          // principal), sus subcategoría/tipo para esta página son los de
+          // esa asignación adicional, no los de la categoría principal.
+          const categoriasExtra = Array.isArray(product.categorias_extra)
+            ? product.categorias_extra
+            : [];
+          const extraMatch =
+            categoria && product.categoria !== categoria
+              ? categoriasExtra.find(
+                  (c: { categoria: string; tipos: ProductType[] }) => c.categoria === categoria
+                )
+              : null;
+          const tipos = extraMatch?.tipos && Array.isArray(extraMatch.tipos)
+            ? extraMatch.tipos
+            : Array.isArray(product.tipos)
+            ? product.tipos
+            : [];
+
+          return {
+            id: String(product.id || product._id || ""),
+            nombre: product.nombre || "",
+            descripcion: product.descripcion || "",
+            precio: Number(product.precio ?? 0),
+            precio_oferta:
+              product.precio_oferta !== null && product.precio_oferta !== undefined
+                ? Number(product.precio_oferta)
+                : null,
+            categoria: categoria || product.categoria || "",
+            marca: product.marca || "",
+            tipos,
+            stock: Number(product.stock ?? 0),
+            image: product.image || "/placeholder-product.png",
+          };
+        });
 
         setProducts(formattedProducts);
       } catch (error) {

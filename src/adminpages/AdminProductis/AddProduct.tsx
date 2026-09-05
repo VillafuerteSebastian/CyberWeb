@@ -20,6 +20,22 @@ type VarianteProducto = {
   valor: string;
 };
 
+// Una categoría adicional completa: misma forma que la principal
+// (categoria + subcategoria + tipoFinal + tipoEspecifico opcional).
+type CategoriaExtra = {
+  categoria: string;
+  subcategoria: string;
+  tipoFinal: string;
+  tipoEspecifico: string;
+};
+
+const emptyExtraDraft: CategoriaExtra = {
+  categoria: "",
+  subcategoria: "",
+  tipoFinal: "",
+  tipoEspecifico: "",
+};
+
 type AdminProduct = {
   id: string;
   name: string;
@@ -33,6 +49,7 @@ type AdminProduct = {
   subcategoria: string;
   marca: string;
   tipos: TipoProducto[];
+  categoriasExtra: CategoriaExtra[];
   variantes?: VarianteProducto[];
   available?: boolean;
 };
@@ -76,6 +93,11 @@ const AddProduct = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const [form, setForm] = useState(emptyForm);
+  // Categorías adicionales completas (con su propia subcategoría/tipo) donde
+  // también debe listarse el producto, ej: un headset en "audio-video" y
+  // también en "gaming" > "accesorios" > "auriculares".
+  const [extraCategorias, setExtraCategorias] = useState<CategoriaExtra[]>([]);
+  const [extraDraft, setExtraDraft] = useState<CategoriaExtra>(emptyExtraDraft);
   const [variantes, setVariantes] = useState<VarianteProducto[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -125,17 +147,30 @@ const AddProduct = () => {
     };
   }, []);
 
+  const findCategory = (categoriaId: string) =>
+    (categories.length > 0 ? categories : categoryData).find((cat) => cat.id === categoriaId);
+
+  const findSection = (categoriaId: string, subcategoriaId: string) =>
+    findCategory(categoriaId)?.sections.find((section) => section.subcategoria === subcategoriaId);
+
   const selectedCategory = useMemo(
-    () => (categories.length > 0 ? categories : categoryData).find((cat) => cat.id === form.categoria),
+    () => findCategory(form.categoria),
     [form.categoria, categories]
   );
 
   const selectedSection = useMemo(
-    () =>
-      selectedCategory?.sections.find(
-        (section) => section.subcategoria === form.subcategoria
-      ),
-    [selectedCategory, form.subcategoria]
+    () => findSection(form.categoria, form.subcategoria),
+    [form.categoria, form.subcategoria, categories]
+  );
+
+  const draftCategory = useMemo(
+    () => findCategory(extraDraft.categoria),
+    [extraDraft.categoria, categories]
+  );
+
+  const draftSection = useMemo(
+    () => findSection(extraDraft.categoria, extraDraft.subcategoria),
+    [extraDraft.categoria, extraDraft.subcategoria, categories]
   );
 
   const categoryOptions = useMemo(
@@ -219,63 +254,105 @@ const AddProduct = () => {
     return section?.links.find((link) => link.tipo === tipoId)?.label || tipoId;
   };
 
-  const specificOptions = useMemo(() => {
+  const computeSpecificOptions = (
+    categoriaId: string,
+    subcategoriaId: string,
+    tipoFinalId: string
+  ): string[] => {
     if (
-      form.categoria === "computadoras" &&
-      form.subcategoria === "perifericos" &&
-      form.tipoFinal === "teclados"
+      categoriaId === "computadoras" &&
+      subcategoriaId === "perifericos" &&
+      tipoFinalId === "teclados"
     ) {
       return ["mecanico", "membrana"];
     }
 
     if (
-      form.categoria === "computadoras" &&
-      form.subcategoria === "perifericos" &&
-      form.tipoFinal === "mouses"
+      categoriaId === "computadoras" &&
+      subcategoriaId === "perifericos" &&
+      tipoFinalId === "mouses"
     ) {
       return ["inalambrico", "cable"];
     }
 
     if (
-      form.categoria === "computadoras" &&
-      form.subcategoria === "componentes" &&
-      form.tipoFinal === "ram"
+      categoriaId === "computadoras" &&
+      subcategoriaId === "componentes" &&
+      tipoFinalId === "ram"
     ) {
       return ["ddr4", "ddr5"];
     }
 
-    if (form.categoria === "gaming" && form.subcategoria === "playstation") {
-      if (form.tipoFinal === "juegos-playstation") {
+    if (categoriaId === "gaming" && subcategoriaId === "playstation") {
+      if (tipoFinalId === "juegos-playstation") {
         return ["ps4", "ps5"];
       }
-      if (form.tipoFinal === "controles") {
+      if (tipoFinalId === "controles") {
         return ["ps4", "ps5"];
       }
     }
 
-    if (form.categoria === "gaming" && form.subcategoria === "nintendo") {
-      if (form.tipoFinal === "juegos-switch") {
+    if (categoriaId === "gaming" && subcategoriaId === "nintendo") {
+      if (tipoFinalId === "juegos-switch") {
         return ["switch-1", "switch-2"];
       }
-      if (form.tipoFinal === "controles-switch") {
+      if (tipoFinalId === "controles-switch") {
         return ["switch-1", "switch-2"];
       }
-      if (form.tipoFinal === "estuche-switch") {
+      if (tipoFinalId === "estuche-switch") {
         return ["switch-1", "switch-2"];
       }
-      if (form.tipoFinal === "accesorios-switch") {
+      if (tipoFinalId === "accesorios-switch") {
         return ["switch-1", "switch-2"];
       }
     }
 
     return [];
-  }, [form.categoria, form.subcategoria, form.tipoFinal]);
+  };
+
+  const specificOptionLabel = (option: string) =>
+    option === "mecanico"
+      ? "Mecánico"
+      : option === "membrana"
+      ? "Membrana"
+      : option === "inalambrico"
+      ? "Inalámbrico"
+      : option === "cable"
+      ? "Cable"
+      : option === "ddr4"
+      ? "DDR4"
+      : option === "ddr5"
+      ? "DDR5"
+      : option === "ps4"
+      ? "PS4"
+      : option === "ps5"
+      ? "PS5"
+      : option === "switch-1"
+      ? "Switch 1"
+      : option === "switch-2"
+      ? "Switch 2"
+      : option;
+
+  const specificOptions = useMemo(
+    () => computeSpecificOptions(form.categoria, form.subcategoria, form.tipoFinal),
+    [form.categoria, form.subcategoria, form.tipoFinal]
+  );
+
+  const draftSpecificOptions = useMemo(
+    () =>
+      computeSpecificOptions(extraDraft.categoria, extraDraft.subcategoria, extraDraft.tipoFinal),
+    [extraDraft.categoria, extraDraft.subcategoria, extraDraft.tipoFinal]
+  );
 
   const filteredProducts = useMemo(() => {
     let filtered = allProducts;
 
     if (categoryFilter) {
-      filtered = filtered.filter((product) => product.categoria === categoryFilter);
+      filtered = filtered.filter(
+        (product) =>
+          product.categoria === categoryFilter ||
+          product.categoriasExtra?.some((extra) => extra.categoria === categoryFilter)
+      );
     }
 
     if (subcategoryFilter) {
@@ -350,9 +427,22 @@ const AddProduct = () => {
 
   const resetForm = () => {
     setForm(emptyForm);
+    setExtraCategorias([]);
+    setExtraDraft(emptyExtraDraft);
     setVariantes([]);
     setImages([]);
     setEditingProductId(null);
+  };
+
+  const handleAddExtraCategoria = () => {
+    if (!extraDraft.categoria || !extraDraft.subcategoria || !extraDraft.tipoFinal) return;
+
+    setExtraCategorias((prev) => [...prev, extraDraft]);
+    setExtraDraft(emptyExtraDraft);
+  };
+
+  const handleRemoveExtraCategoria = (indexToRemove: number) => {
+    setExtraCategorias((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const fetchProducts = async () => {
@@ -395,6 +485,14 @@ const AddProduct = () => {
           subcategoria,
           marca: product.marca || "N/A",
           tipos,
+          categoriasExtra: Array.isArray(product.categorias_extra)
+            ? product.categorias_extra.map((extra: { categoria?: string; tipos?: TipoProducto[] }) => ({
+                categoria: extra.categoria || "",
+                subcategoria: extra.tipos?.[0]?.tipo || "",
+                tipoFinal: extra.tipos?.[1]?.tipo || "",
+                tipoEspecifico: extra.tipos?.[2]?.tipo || "",
+              }))
+            : [],
           variantes: Array.isArray(product.variantes) ? product.variantes : [],
           available: product.available !== false,
         };
@@ -520,6 +618,11 @@ const AddProduct = () => {
     >
   ) => {
     const { name, value } = e.target;
+
+    if (name === "categoria") {
+      // Una categoría no puede ser a la vez la principal y una adicional.
+      setExtraCategorias((prev) => prev.filter((extra) => extra.categoria !== value));
+    }
 
     setForm((prev) => {
       if (name === "categoria") {
@@ -685,6 +788,8 @@ const AddProduct = () => {
       varianteNombre: "",
       nuevoValorVariante: "",
     });
+    setExtraCategorias(product.categoriasExtra || []);
+    setExtraDraft(emptyExtraDraft);
     setVariantes(product.variantes || []);
     setImages(
       product.images?.length ? product.images : product.image ? [product.image] : []
@@ -744,6 +849,14 @@ const AddProduct = () => {
       tipos: tiposArray,
       bullets: bulletsArray,
       variantes,
+      categorias_extra: extraCategorias.map((extra) => ({
+        categoria: extra.categoria,
+        tipos: [
+          { tipo: extra.subcategoria },
+          { tipo: extra.tipoFinal },
+          ...(extra.tipoEspecifico ? [{ tipo: extra.tipoEspecifico }] : []),
+        ],
+      })),
     };
 
     try {
@@ -947,34 +1060,163 @@ const AddProduct = () => {
                           onChange={handleChange}
                           className="radio-input"
                         />
-                        <span className="radio-text">
-                          {option === "mecanico"
-                            ? "Mecánico"
-                            : option === "membrana"
-                            ? "Membrana"
-                            : option === "inalambrico"
-                            ? "Inalámbrico"
-                            : option === "cable"
-                            ? "Cable"
-                            : option === "ddr4"
-                            ? "DDR4"
-                            : option === "ddr5"
-                            ? "DDR5"
-                            : option === "ps4"
-                            ? "PS4"
-                            : option === "ps5"
-                            ? "PS5"
-                            : option === "switch-1"
-                            ? "Switch 1"
-                            : option === "switch-2"
-                            ? "Switch 2"
-                            : option}
-                        </span>
+                        <span className="radio-text">{specificOptionLabel(option)}</span>
                       </label>
                     ))}
                   </div>
                 </div>
               )}
+
+              <div className="form-group form-group-full">
+                <label>
+                  Categorías adicionales{" "}
+                  <span className="optional-text">(opcional)</span>
+                </label>
+                <p className="field-hint">
+                  Ubica este producto también en otra categoría, con su
+                  propia subcategoría y tipo (ej: un headset en "Audio y
+                  Video" y además en "Gaming" → "Accesorios" → "Auriculares").
+                </p>
+
+                {extraCategorias.length > 0 && (
+                  <div className="variant-chips-wrapper">
+                    {extraCategorias.map((extra, index) => (
+                      <button
+                        key={`${extra.categoria}-${index}`}
+                        type="button"
+                        className="variant-chip"
+                        onClick={() => handleRemoveExtraCategoria(index)}
+                        title="Quitar categoría adicional"
+                      >
+                        <span>
+                          {getCategoryLabel(extra.categoria)}
+                          {extra.subcategoria &&
+                            ` → ${getSubcategoryLabel(extra.categoria, extra.subcategoria)}`}
+                          {extra.tipoFinal &&
+                            ` → ${getTypeLabel(extra.categoria, extra.subcategoria, extra.tipoFinal)}`}
+                          {extra.tipoEspecifico && ` (${specificOptionLabel(extra.tipoEspecifico)})`}
+                        </span>
+                        <strong>×</strong>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="extra-categoria-picker">
+                  <div className="form-group">
+                    <label htmlFor="extraCategoria">Categoría</label>
+                    <select
+                      id="extraCategoria"
+                      value={extraDraft.categoria}
+                      onChange={(e) =>
+                        setExtraDraft({
+                          categoria: e.target.value,
+                          subcategoria: "",
+                          tipoFinal: "",
+                          tipoEspecifico: "",
+                        })
+                      }
+                    >
+                      <option value="">Selecciona una categoría</option>
+                      {categoryOptions
+                        .filter(
+                          (category) =>
+                            category.value !== form.categoria &&
+                            !extraCategorias.some((extra) => extra.categoria === category.value)
+                        )
+                        .map((category) => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="extraSubcategoria">Subcategoría / sección</label>
+                    <select
+                      id="extraSubcategoria"
+                      value={extraDraft.subcategoria}
+                      onChange={(e) =>
+                        setExtraDraft((prev) => ({
+                          ...prev,
+                          subcategoria: e.target.value,
+                          tipoFinal: "",
+                          tipoEspecifico: "",
+                        }))
+                      }
+                      disabled={!draftCategory}
+                    >
+                      <option value="">Selecciona una subcategoría</option>
+                      {draftCategory?.sections.map((section) => (
+                        <option key={section.subcategoria} value={section.subcategoria}>
+                          {section.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="extraTipoFinal">Tipo específico</label>
+                    <select
+                      id="extraTipoFinal"
+                      value={extraDraft.tipoFinal}
+                      onChange={(e) =>
+                        setExtraDraft((prev) => ({
+                          ...prev,
+                          tipoFinal: e.target.value,
+                          tipoEspecifico: "",
+                        }))
+                      }
+                      disabled={!draftSection}
+                    >
+                      <option value="">Selecciona un tipo</option>
+                      {draftSection?.links.map((link) => (
+                        <option key={link.tipo} value={link.tipo}>
+                          {link.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {draftSpecificOptions.length > 0 && (
+                    <div className="form-group form-group-full">
+                      <label className="radio-group-label">Subtipo específico</label>
+                      <div className="radio-options-container">
+                        {draftSpecificOptions.map((option) => (
+                          <label key={option} className="radio-option-label">
+                            <input
+                              type="radio"
+                              name="extraTipoEspecifico"
+                              value={option}
+                              checked={extraDraft.tipoEspecifico === option}
+                              onChange={(e) =>
+                                setExtraDraft((prev) => ({
+                                  ...prev,
+                                  tipoEspecifico: e.target.value,
+                                }))
+                              }
+                              className="radio-input"
+                            />
+                            <span className="radio-text">{specificOptionLabel(option)}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={handleAddExtraCategoria}
+                    disabled={
+                      !extraDraft.categoria || !extraDraft.subcategoria || !extraDraft.tipoFinal
+                    }
+                  >
+                    Agregar categoría
+                  </button>
+                </div>
+              </div>
 
               <div className="form-group form-group-full" onPaste={handleImagePaste}>
                 <label>Imágenes del producto</label>
@@ -1358,6 +1600,16 @@ const AddProduct = () => {
                             </span>
                           )}
                           {subtipo && <span>{subtipo.toUpperCase()}</span>}
+                          {product.categoriasExtra?.map((extra, index) => (
+                            <span
+                              key={`${extra.categoria}-${index}`}
+                              title="Categoría adicional"
+                            >
+                              + {getCategoryLabel(extra.categoria)}
+                              {extra.tipoFinal &&
+                                ` (${getTypeLabel(extra.categoria, extra.subcategoria, extra.tipoFinal)})`}
+                            </span>
+                          ))}
                         </div>
 
                         {product.variantes && product.variantes.length > 0 && (

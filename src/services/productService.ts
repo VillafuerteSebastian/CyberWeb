@@ -10,6 +10,13 @@ export type ProductoVariante = {
   precio_adicional?: number;
 };
 
+/** Una asignación completa de categoría: misma forma que categoria+tipos de
+ * la fila principal, usada para las categorías adicionales de un producto. */
+export type ProductoCategoriaExtra = {
+  categoria: string;
+  tipos: ProductoTipo[];
+};
+
 export interface ProductoRow {
   id: string;
   nombre: string;
@@ -25,6 +32,10 @@ export interface ProductoRow {
   available: boolean;
   bullets: string[];
   variantes: ProductoVariante[];
+  /** Categorías adicionales donde también debe listarse el producto, cada
+   * una con su propia subcategoría/tipo, además de `categoria` (ej: un
+   * headset en "audio-video" y también en "gaming" > "accesorios"). */
+  categorias_extra: ProductoCategoriaExtra[];
   created_at?: string;
   updated_at?: string;
 }
@@ -43,6 +54,7 @@ export interface ProductoCreate {
   available?: boolean;
   bullets?: string[];
   variantes?: ProductoVariante[];
+  categorias_extra?: ProductoCategoriaExtra[];
 }
 
 export type ProductoUpdate = Partial<ProductoCreate> & { available?: boolean };
@@ -112,6 +124,43 @@ class ProductService {
     };
   }
 
+  /**
+   * Todos los productos visibles en una categoría: los que la tienen como
+   * `categoria` principal, más los que la tienen entre sus categorías
+   * adicionales (`categorias_extra`). Se resuelve con dos consultas (una
+   * `eq` y una `contains` sobre el jsonb) en vez de un solo `.or()` porque
+   * el operador `cs` de PostgREST sobre jsonb no se puede armar con seguridad
+   * dentro de un filtro `.or()` (los `{`, `}` y `,` del JSON chocan con el
+   * separador de condiciones de `.or()`).
+   */
+  async getProductsByCategoria(categoria: string): Promise<ProductoRow[]> {
+    const [primary, extra] = await Promise.all([
+      supabase.from(TABLE).select("*").eq("is_deleted", false).eq("categoria", categoria),
+      supabase
+        .from(TABLE)
+        .select("*")
+        .eq("is_deleted", false)
+        .contains("categorias_extra", [{ categoria }]),
+    ]);
+
+    if (primary.error) {
+      console.error("Error obteniendo productos por categoría:", primary.error);
+      throw new Error(primary.error.message);
+    }
+
+    if (extra.error) {
+      console.error("Error obteniendo productos por categoría adicional:", extra.error);
+      throw new Error(extra.error.message);
+    }
+
+    const byId = new Map<string, ProductoRow>();
+    [...(primary.data || []), ...(extra.data || [])].forEach((row) => {
+      byId.set(row.id, row as ProductoRow);
+    });
+
+    return Array.from(byId.values());
+  }
+
   async getProductById(id: string): Promise<ProductoRow | null> {
     const { data, error } = await supabase
       .from(TABLE)
@@ -145,6 +194,7 @@ class ProductService {
         available: payload.available !== false,
         bullets: payload.bullets || [],
         variantes: payload.variantes || [],
+        categorias_extra: payload.categorias_extra || [],
       })
       .select("*")
       .single();

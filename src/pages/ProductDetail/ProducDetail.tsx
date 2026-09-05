@@ -192,15 +192,11 @@ const ProductDetail = () => {
       try {
         setLoadingSimilar(true);
 
-        const response = await productService.getProducts({
-          page: 1,
-          limit: 8,
-          categoria: product.categoria,
-        });
+        const data = await productService.getProductsByCategoria(product.categoria);
 
         if (cancelado) return;
 
-        const similares = response.data
+        const similares = data
           .filter((p) => String(p.id) !== String(product.id) && p.available !== false)
           .slice(0, 4)
           .map((p) => ({

@@ -59,17 +59,26 @@ create table if not exists public.productos (
   available boolean not null default true,
   bullets jsonb not null default '[]'::jsonb,
   variantes jsonb not null default '[]'::jsonb,
+  categorias_extra jsonb not null default '[]'::jsonb,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index if not exists productos_categoria_idx on public.productos (categoria);
+create index if not exists productos_categorias_extra_idx on public.productos using gin (categorias_extra jsonb_path_ops);
 
 -- Si la tabla ya existía de una corrida anterior de este script (antes de que
 -- existieran estas columnas), agrégalas sin tocar filas existentes.
 alter table public.productos add column if not exists images jsonb not null default '[]'::jsonb;
 alter table public.productos add column if not exists precio_oferta numeric(12, 2);
+-- Categorías adicionales: un producto sigue teniendo su "categoria" principal
+-- con su árbol subcategoria/tipo en `tipos`, pero además puede tener otras
+-- asignaciones completas (categoria + subcategoria + tipo propios) para
+-- aparecer también en esas categorías con sus mismos filtros (ej: un headset
+-- ubicado en "audio-video" Y también en "gaming" > "accesorios" > "auriculares").
+-- Cada elemento tiene la misma forma que la fila completa: { categoria, tipos }.
+alter table public.productos add column if not exists categorias_extra jsonb not null default '[]'::jsonb;
 
 -- ----------------------------------------------------------------------------
 -- 4. DESCUENTOS
