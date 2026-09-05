@@ -81,13 +81,22 @@ const CategoryPage = () => {
       try {
         setLoading(true);
 
-        const response = await productService.getProducts({
-          page: 1,
-          limit: 100,
-          categoria: categoria || undefined,
-        });
+        const PAGE_SIZE = 100;
+        let page = 1;
+        let rawProducts: any[] = [];
 
-        const rawProducts = response.data;
+        while (true) {
+          const response = await productService.getProducts({
+            page,
+            limit: PAGE_SIZE,
+            categoria: categoria || undefined,
+          });
+
+          rawProducts = rawProducts.concat(response.data);
+
+          if (!response.hasMore) break;
+          page += 1;
+        }
 
         const formattedProducts: Product[] = rawProducts.map((product: any) => ({
           id: String(product.id || product._id || ""),

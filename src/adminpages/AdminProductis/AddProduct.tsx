@@ -359,12 +359,21 @@ const AddProduct = () => {
     try {
       setLoadingProducts(true);
 
-      const response = await productService.getProducts({
-        page: 1,
-        limit: 100,
-      });
+      const PAGE_SIZE = 100;
+      let page = 1;
+      let rawProducts: any[] = [];
 
-      const rawProducts = response.data;
+      while (true) {
+        const response = await productService.getProducts({
+          page,
+          limit: PAGE_SIZE,
+        });
+
+        rawProducts = rawProducts.concat(response.data);
+
+        if (!response.hasMore) break;
+        page += 1;
+      }
 
       const mappedProducts: AdminProduct[] = rawProducts.map((product: any) => {
         const tipos = Array.isArray(product.tipos) ? product.tipos : [];
