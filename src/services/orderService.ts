@@ -39,7 +39,6 @@ export interface CreateOrderInput {
   delivery_method: string;
   zona_entrega: string | null;
   address: string;
-  shipping_cost: number;
 }
 
 export interface CreateOrderResult {
@@ -55,8 +54,9 @@ type Address = {
 
 class OrderService {
   /**
-   * Crea una orden vía RPC (el precio se calcula en el servidor a partir
-   * del product_id, el cliente nunca decide el precio final).
+   * Crea una orden vía RPC (el precio de cada producto Y el costo de envío
+   * se calculan en el servidor a partir de product_id/delivery_method, el
+   * cliente nunca decide ningún valor que afecte el total final).
    */
   async createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
     const { data, error } = await supabase.rpc("create_order", {
@@ -64,7 +64,6 @@ class OrderService {
       delivery_method: input.delivery_method,
       zona_entrega: input.zona_entrega,
       address: input.address,
-      shipping_cost: input.shipping_cost,
     });
 
     if (error) {

@@ -1,6 +1,6 @@
 .add-product-page {
   min-height: 100vh;
-  padding: 2rem;
+  padding: 1.25rem;
 }
 
 .add-product-container {
@@ -13,30 +13,57 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
 }
 
 .add-product-header h1 {
   margin: 0;
   color: var(--text-primary);
-  font-size: 1.9rem;
+  font-size: 1.5rem;
 }
 
 .add-product-header p {
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
   color: var(--text-muted);
+  font-size: 0.88rem;
 }
 
 .header-actions {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+/* Selector Formulario/Productos: solo existe visualmente en pantallas
+   angostas (ver media query más abajo), donde el layout pasa a una sola
+   columna y ya no tiene sentido bajar todo el formulario para ver la lista. */
+.mobile-view-tabs {
+  display: none;
+}
+
+.mobile-view-tabs button {
+  flex: 1;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  padding: 0.65rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.mobile-view-tabs button.active {
+  background: var(--accent-soft);
+  border-color: var(--border-accent);
+  color: var(--accent);
 }
 
 .add-product-content {
   display: grid;
-  grid-template-columns: minmax(480px, 640px) 1fr;
-  gap: 2rem;
+  grid-template-columns: minmax(420px, 560px) 1fr;
+  gap: 1.25rem;
   align-items: start;
 }
 
@@ -45,20 +72,21 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1.1rem;
   box-shadow: var(--shadow-elev-sm);
 }
 
 .add-product-form-card h2,
 .products-preview-card h2 {
-  margin-top: 0;
+  margin: 0 0 0.75rem;
   color: var(--text-primary);
+  font-size: 1.1rem;
 }
 
 .add-product-form {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.8rem 1rem;
+  gap: 0.55rem 0.75rem;
   align-items: start;
 }
 
@@ -73,12 +101,12 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .form-group label,
 .radio-group-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   font-weight: 600;
 }
@@ -93,8 +121,8 @@
 .form-group textarea {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem;
-  font-size: 0.9rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   resize: vertical;
@@ -125,8 +153,8 @@
 
 .toggle-switch {
   display: flex;
-  gap: 0.6rem;
-  margin-bottom: 0.4rem;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 
 .toggle-switch-compact {
@@ -161,7 +189,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 90px;
+  min-height: 64px;
   border: 2px dashed var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--bg-base);
@@ -189,8 +217,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.85rem;
+  gap: 0.2rem;
+  padding: 0.6rem;
   text-align: center;
   color: var(--text-muted);
 }
@@ -321,17 +349,17 @@
 .radio-options-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.5rem;
 }
 
 .radio-option-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   border: 1px solid var(--border-subtle);
   background: var(--bg-base);
   border-radius: var(--radius-pill);
-  padding: 0.65rem 0.9rem;
+  padding: 0.5rem 0.8rem;
   cursor: pointer;
   transition: border-color 0.2s ease, background 0.2s ease;
 }
@@ -356,24 +384,25 @@
   background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 1rem;
+  padding: 0.75rem;
 }
 
 .variant-box h3 {
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.3rem;
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .variant-box p {
-  margin: 0 0 1rem;
+  margin: 0 0 0.6rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .variant-inline {
   display: flex;
-  gap: 0.8rem;
+  gap: 0.6rem;
   align-items: end;
   flex-wrap: wrap;
 }
@@ -446,7 +475,7 @@
 .primary-btn {
   background: var(--accent-gradient);
   color: #ffffff;
-  padding: 0.9rem 1rem;
+  padding: 0.7rem 1rem;
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-glow);
 }
@@ -465,8 +494,9 @@
   background: var(--bg-elevated);
   color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
-  padding: 0.8rem 1rem;
+  padding: 0.6rem 0.9rem;
   border-radius: var(--radius-sm);
+  font-size: 0.88rem;
 }
 
 .secondary-btn:hover {
@@ -478,8 +508,9 @@
   background: var(--warning-soft);
   color: var(--warning);
   border: 1px solid rgba(251, 191, 36, 0.3);
-  padding: 0.8rem 1rem;
+  padding: 0.6rem 0.9rem;
   border-radius: var(--radius-sm);
+  font-size: 0.88rem;
 }
 
 .warning-btn:hover {
@@ -491,8 +522,9 @@
   background: var(--danger-soft);
   color: var(--danger);
   border: 1px solid rgba(248, 113, 113, 0.3);
-  padding: 0.8rem 1rem;
+  padding: 0.6rem 0.9rem;
   border-radius: var(--radius-sm);
+  font-size: 0.88rem;
 }
 
 .delete-btn:hover {
@@ -721,6 +753,53 @@
   width: 100%;
 }
 
+.offer-toggle-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.offer-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  text-align: left;
+}
+
+.offer-editor-input {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: var(--bg-base);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.offer-editor-input:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.offer-editor-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.offer-editor-actions button {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8rem;
+}
+
 .admin-pagination {
   display: flex;
   justify-content: center;
@@ -804,15 +883,37 @@
   .admin-products-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .mobile-view-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Con las pestañas activas se muestra una sola tarjeta a la vez, así
+     en mobile no hay que bajar todo el formulario para ver los productos. */
+  .add-product-content[data-mobile-tab="products"] .add-product-form-card {
+    display: none;
+  }
+
+  .add-product-content[data-mobile-tab="form"] .products-preview-card {
+    display: none;
+  }
 }
 
 @media (max-width: 700px) {
   .add-product-page {
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+
+  .add-product-form-card,
+  .products-preview-card {
+    padding: 0.85rem;
   }
 
   .add-product-form {
     grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 
   .add-product-header {
@@ -824,7 +925,44 @@
   }
 
   .admin-products-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  .admin-product-card {
+    padding: 0.6rem;
+  }
+
+  .admin-product-card img {
+    height: 100px;
+    margin-bottom: 0.5rem;
+    padding: 0.3rem;
+  }
+
+  .admin-product-card h3 {
+    font-size: 0.82rem;
+  }
+
+  .admin-meta {
+    font-size: 0.72rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-tags,
+  .admin-variants {
+    gap: 0.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-tags span,
+  .admin-variants span {
+    font-size: 0.62rem;
+    padding: 0.22rem 0.45rem;
+  }
+
+  .admin-card-actions {
+    margin-top: 0.5rem;
+    gap: 0.5rem;
   }
 
   .variant-inline {
@@ -839,6 +977,7 @@
 
   .admin-card-buttons-row {
     flex-direction: column;
+    gap: 0.4rem;
   }
 
   .admin-pagination {
@@ -869,6 +1008,12 @@
 
 @media (max-width: 700px) {
   .admin-filters-sidebar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .admin-products-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -40,8 +40,6 @@ type AdminProduct = {
 const emptyForm = {
   name: "",
   price: "",
-  offerPrice: "",
-  offerPercent: "",
   description: "",
   categoria: "",
   subcategoria: "",
@@ -82,7 +80,21 @@ const AddProduct = () => {
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const [offerMode, setOfferMode] = useState<"amount" | "percent">("amount");
+  // Solo se usa en pantallas angostas (ver CSS), donde el formulario y la
+  // lista de productos se muestran de a uno para no tener que bajar todo
+  // el formulario para ver los productos.
+  const [mobileTab, setMobileTab] = useState<"form" | "products">("form");
+
+  // El precio de oferta ya no se pone desde el formulario de alta: se
+  // administra directo en la tarjeta del producto (junto a Disponible,
+  // Editar y Eliminar), una vez que el producto ya existe.
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
+  const [offerDraft, setOfferDraft] = useState({
+    mode: "amount" as "amount" | "percent",
+    amount: "",
+    percent: "",
+  });
+  const [savingOffer, setSavingOffer] = useState(false);
 
   // Evita que el scroll del mouse sobre un input numérico enfocado cambie
   // su valor por accidente (comportamiento nativo de Chrome).
@@ -340,7 +352,6 @@ const AddProduct = () => {
     setForm(emptyForm);
     setVariantes([]);
     setImages([]);
-    setOfferMode("amount");
     setEditingProductId(null);
   };
 
@@ -419,6 +430,78 @@ const AddProduct = () => {
       alert(backendMessage);
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const openOfferEditor = (product: AdminProduct) => {
+    setEditingOfferId(product.id);
+    setOfferDraft({
+      mode: "amount",
+      amount: product.offerPrice != null ? String(product.offerPrice) : "",
+      percent: "",
+    });
+  };
+
+  const handleSaveOffer = async (product: AdminProduct) => {
+    let offerPriceNum: number | null = null;
+
+    if (offerDraft.mode === "amount" && offerDraft.amount.trim()) {
+      offerPriceNum = Number(offerDraft.amount);
+    } else if (offerDraft.mode === "percent" && offerDraft.percent.trim()) {
+      const pct = Number(offerDraft.percent);
+      if (pct <= 0 || pct >= 100) {
+        alert("El porcentaje de descuento debe estar entre 1 y 99");
+        return;
+      }
+      offerPriceNum = Math.round(product.price * (1 - pct / 100));
+    }
+
+    if (
+      offerPriceNum !== null &&
+      (offerPriceNum <= 0 || offerPriceNum >= product.price)
+    ) {
+      alert("El precio de oferta debe ser mayor a 0 y menor al precio normal");
+      return;
+    }
+
+    try {
+      setSavingOffer(true);
+      await productService.updateProduct(product.id, {
+        precio_oferta: offerPriceNum,
+      });
+
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, offerPrice: offerPriceNum } : p))
+      );
+      setAllProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, offerPrice: offerPriceNum } : p))
+      );
+
+      setEditingOfferId(null);
+    } catch (error: any) {
+      alert(error?.message || "No se pudo actualizar el precio de oferta");
+    } finally {
+      setSavingOffer(false);
+    }
+  };
+
+  const handleRemoveOffer = async (product: AdminProduct) => {
+    try {
+      setSavingOffer(true);
+      await productService.updateProduct(product.id, { precio_oferta: null });
+
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, offerPrice: null } : p))
+      );
+      setAllProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, offerPrice: null } : p))
+      );
+
+      setEditingOfferId(null);
+    } catch (error: any) {
+      alert(error?.message || "No se pudo quitar el precio de oferta");
+    } finally {
+      setSavingOffer(false);
     }
   };
 
@@ -582,11 +665,6 @@ const AddProduct = () => {
     setForm({
       name: product.name || "",
       price: String(product.price ?? ""),
-      offerPrice:
-        product.offerPrice !== null && product.offerPrice !== undefined
-          ? String(product.offerPrice)
-          : "",
-      offerPercent: "",
       description: product.description || "",
       categoria: product.categoria || "",
       subcategoria,
@@ -599,11 +677,11 @@ const AddProduct = () => {
       nuevoValorVariante: "",
     });
     setVariantes(product.variantes || []);
-    setOfferMode("amount");
     setImages(
       product.images?.length ? product.images : product.image ? [product.image] : []
     );
 
+    setMobileTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -623,26 +701,6 @@ const AddProduct = () => {
     }
 
     const precioNum = Number(form.price);
-    let offerPriceNum: number | null = null;
-
-    if (offerMode === "amount" && form.offerPrice.trim()) {
-      offerPriceNum = Number(form.offerPrice);
-    } else if (offerMode === "percent" && form.offerPercent.trim()) {
-      const pct = Number(form.offerPercent);
-      if (pct <= 0 || pct >= 100) {
-        alert("El porcentaje de descuento debe estar entre 1 y 99");
-        return;
-      }
-      offerPriceNum = Math.round(precioNum * (1 - pct / 100));
-    }
-
-    if (
-      offerPriceNum !== null &&
-      (offerPriceNum <= 0 || offerPriceNum >= precioNum)
-    ) {
-      alert("El precio de oferta debe ser mayor a 0 y menor al precio normal");
-      return;
-    }
 
     // Acepta pegar una lista de características (una por línea, con o sin
     // viñetas como •, -, *) o el formato viejo separado por comas.
@@ -663,11 +721,13 @@ const AddProduct = () => {
         ? form.nuevaMarca.trim() || "N/A"
         : form.marca || "N/A";
 
+    // El precio de oferta no se toca desde este formulario: en un producto
+    // nuevo queda sin oferta (se agrega después desde la tarjeta) y en una
+    // edición no se envía la clave para no pisar la oferta que ya tenía.
     const payload = {
       nombre: form.name.trim(),
       descripcion: form.description.trim() || "Sin descripción disponible",
       precio: precioNum,
-      precio_oferta: offerPriceNum,
       categoria: form.categoria,
       marca: finalBrand,
       image: images[0] || "",
@@ -690,6 +750,7 @@ const AddProduct = () => {
 
       resetForm();
       fetchProducts();
+      setMobileTab("products");
     } catch (error: any) {
       console.error("Error al guardar producto:", error);
       alert(error?.message || "No se pudo guardar el producto");
@@ -761,7 +822,24 @@ const AddProduct = () => {
           </div>
         </div>
 
-        <div className="add-product-content">
+        <div className="mobile-view-tabs">
+          <button
+            type="button"
+            className={mobileTab === "form" ? "active" : ""}
+            onClick={() => setMobileTab("form")}
+          >
+            {editingProductId ? "Editar producto" : "Agregar producto"}
+          </button>
+          <button
+            type="button"
+            className={mobileTab === "products" ? "active" : ""}
+            onClick={() => setMobileTab("products")}
+          >
+            Productos ({filteredProducts.length})
+          </button>
+        </div>
+
+        <div className="add-product-content" data-mobile-tab={mobileTab}>
           <div className="add-product-form-card">
             <h2>{editingProductId ? "Editar producto" : "Nuevo producto"}</h2>
 
@@ -791,72 +869,6 @@ const AddProduct = () => {
                   onWheel={blurOnWheel}
                   placeholder="Ej: 8500"
                 />
-              </div>
-
-              <div className="form-group form-group-full">
-                <div className="field-label-row">
-                  <label>Precio de oferta (opcional)</label>
-
-                  <div className="toggle-switch toggle-switch-compact">
-                    <button
-                      type="button"
-                      className={offerMode === "amount" ? "toggle-btn active" : "toggle-btn"}
-                      onClick={() => setOfferMode("amount")}
-                    >
-                      Monto
-                    </button>
-                    <button
-                      type="button"
-                      className={offerMode === "percent" ? "toggle-btn active" : "toggle-btn"}
-                      onClick={() => setOfferMode("percent")}
-                    >
-                      %
-                    </button>
-                  </div>
-                </div>
-
-                {offerMode === "amount" ? (
-                  <input
-                    id="offerPrice"
-                    name="offerPrice"
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={form.offerPrice}
-                    onChange={handleChange}
-                    onWheel={blurOnWheel}
-                    placeholder="Ej: 6900 — déjalo vacío si no está en descuento"
-                  />
-                ) : (
-                  <>
-                    <input
-                      id="offerPercent"
-                      name="offerPercent"
-                      type="number"
-                      min="1"
-                      max="99"
-                      step="1"
-                      value={form.offerPercent}
-                      onChange={handleChange}
-                      onWheel={blurOnWheel}
-                      placeholder="Ej: 20 (%) — déjalo vacío si no está en descuento"
-                    />
-                    {form.price.trim() && form.offerPercent.trim() && (
-                      <p className="field-hint">
-                        Precio final:{" "}
-                        {formatPrice(
-                          Number(form.price) * (1 - Number(form.offerPercent) / 100)
-                        )}
-                      </p>
-                    )}
-                  </>
-                )}
-
-                <p className="field-hint">
-                  Si ponés un precio de oferta (o un porcentaje) menor al
-                  precio normal, el producto aparece con descuento en toda la
-                  tienda y en la página de Descuentos.
-                </p>
               </div>
 
               <div className="form-group">
@@ -1084,7 +1096,7 @@ const AddProduct = () => {
                 <textarea
                   id="description"
                   name="description"
-                  rows={3}
+                  rows={2}
                   value={form.description}
                   onChange={handleChange}
                   placeholder="Descripción general del producto"
@@ -1096,7 +1108,7 @@ const AddProduct = () => {
                 <textarea
                   id="bullets"
                   name="bullets"
-                  rows={3}
+                  rows={2}
                   value={form.bullets}
                   onChange={handleChange}
                   placeholder={"Una característica por línea, por ejemplo:\n4K a 60Hz\nCable de 2 metros\nCompatible con HDR"}
@@ -1366,6 +1378,123 @@ const AddProduct = () => {
                               ? "✅ Disponible — deshabilitar"
                               : "❌ No disponible — habilitar"}
                           </button>
+
+                          <button
+                            type="button"
+                            className={
+                              onSale
+                                ? "secondary-btn full-btn offer-toggle-active"
+                                : "secondary-btn full-btn"
+                            }
+                            onClick={() =>
+                              editingOfferId === product.id
+                                ? setEditingOfferId(null)
+                                : openOfferEditor(product)
+                            }
+                          >
+                            {onSale
+                              ? `🏷️ Oferta: ${formatPrice(product.offerPrice as number)}`
+                              : "🏷️ Agregar precio de oferta"}
+                          </button>
+
+                          {editingOfferId === product.id && (
+                            <div className="offer-editor">
+                              <div className="toggle-switch toggle-switch-compact">
+                                <button
+                                  type="button"
+                                  className={
+                                    offerDraft.mode === "amount"
+                                      ? "toggle-btn active"
+                                      : "toggle-btn"
+                                  }
+                                  onClick={() =>
+                                    setOfferDraft((prev) => ({ ...prev, mode: "amount" }))
+                                  }
+                                >
+                                  Monto
+                                </button>
+                                <button
+                                  type="button"
+                                  className={
+                                    offerDraft.mode === "percent"
+                                      ? "toggle-btn active"
+                                      : "toggle-btn"
+                                  }
+                                  onClick={() =>
+                                    setOfferDraft((prev) => ({ ...prev, mode: "percent" }))
+                                  }
+                                >
+                                  %
+                                </button>
+                              </div>
+
+                              {offerDraft.mode === "amount" ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  value={offerDraft.amount}
+                                  onChange={(e) =>
+                                    setOfferDraft((prev) => ({
+                                      ...prev,
+                                      amount: e.target.value,
+                                    }))
+                                  }
+                                  onWheel={blurOnWheel}
+                                  placeholder="Ej: 6900"
+                                  className="offer-editor-input"
+                                />
+                              ) : (
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="99"
+                                  step="1"
+                                  value={offerDraft.percent}
+                                  onChange={(e) =>
+                                    setOfferDraft((prev) => ({
+                                      ...prev,
+                                      percent: e.target.value,
+                                    }))
+                                  }
+                                  onWheel={blurOnWheel}
+                                  placeholder="Ej: 20 (%)"
+                                  className="offer-editor-input"
+                                />
+                              )}
+
+                              <div className="offer-editor-actions">
+                                <button
+                                  type="button"
+                                  className="primary-btn"
+                                  disabled={savingOffer}
+                                  onClick={() => handleSaveOffer(product)}
+                                >
+                                  {savingOffer ? "Guardando..." : "Guardar"}
+                                </button>
+
+                                {onSale && (
+                                  <button
+                                    type="button"
+                                    className="warning-btn"
+                                    disabled={savingOffer}
+                                    onClick={() => handleRemoveOffer(product)}
+                                  >
+                                    Quitar
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  className="secondary-btn"
+                                  disabled={savingOffer}
+                                  onClick={() => setEditingOfferId(null)}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           <div className="admin-card-buttons-row">
                             <button

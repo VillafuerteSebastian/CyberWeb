@@ -237,7 +237,8 @@ const CartPage = () => {
         // ✅ NUEVO: incluye la zona en el payload cuando aplica
         zona_entrega: deliveryMethod === "nearby" ? zonaSeleccionada : null,
         address: requiresAddress ? selectedAddress : "",
-        shipping_cost: shippingCost,
+        // El costo de envío ya no se manda: lo calcula el servidor a partir
+        // de delivery_method/zona_entrega, para que no se pueda manipular.
       };
 
       const response = await orderService.createOrder(payload);
@@ -254,7 +255,9 @@ const CartPage = () => {
         direccion_entrega: requiresAddress ? selectedAddress : "Retiro en tienda",
         subtotal,
         envio: shippingCost,
-        total,
+        // Usa el total confirmado por el servidor (RPC create_order), no el
+        // estimado localmente, ya que el servidor es quien calcula el envío.
+        total: response.total,
         productos: cart.map((item) => ({
           product_id: item.id,
           nombre: item.name,

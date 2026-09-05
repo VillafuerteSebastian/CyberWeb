@@ -175,14 +175,24 @@ as $$
 $$;
 
 -- ----------------------------------------------------------------------------
--- 8. RPC create_order — calcula precios en servidor, inserta orden + items
+-- 8. RPC create_order — calcula precios Y envío en servidor, inserta orden + items
 -- ----------------------------------------------------------------------------
+-- Antes esta función recibía "shipping_cost" como parámetro y lo sumaba tal
+-- cual al total, confiando en el cliente. Cualquier usuario autenticado podía
+-- llamar al RPC directo (consola del navegador, con su propia sesión) con
+-- shipping_cost=0 o negativo y pagar de menos por el envío — mass assignment
+-- / fraude de precio (OWASP API3:2023), igual que el caso que ya se evitaba
+-- con el total de la orden y el precio de cada producto. Ahora el costo de
+-- envío se calcula acá mismo a partir de delivery_method/zona_entrega (los
+-- mismos montos fijos que ya se mostraban en CartPage.tsx) y el parámetro
+-- shipping_cost del cliente se eliminó por completo.
+drop function if exists public.create_order(jsonb, text, text, text, numeric);
+
 create or replace function public.create_order(
   items jsonb,               -- [{ "product_id": "uuid", "cantidad": 2 }, ...]
   delivery_method text,
   zona_entrega text,
-  address text,
-  shipping_cost numeric
+  address text
 )
 returns table (order_id uuid, order_number bigint, total numeric)
 language plpgsql
@@ -195,6 +205,7 @@ declare
   v_order_number bigint;
   v_subtotal numeric := 0;
   v_total numeric := 0;
+  v_shipping_cost numeric := 0;
   v_customer_name text;
   v_customer_email text;
   v_customer_phone text;
@@ -206,12 +217,25 @@ begin
     raise exception 'Debes iniciar sesión para crear una orden';
   end if;
 
+  if delivery_method = 'store' then
+    v_shipping_cost := 0;
+  elsif delivery_method = 'nearby' then
+    if zona_entrega is null or zona_entrega not in ('puntarenas', 'el_roble', 'barranca', 'esparza') then
+      raise exception 'Zona de entrega inválida para envío a alrededores';
+    end if;
+    v_shipping_cost := 3000;
+  elsif delivery_method = 'correos' then
+    v_shipping_cost := 4500;
+  else
+    raise exception 'Método de entrega inválido';
+  end if;
+
   select nombre_completo, correo, telefono
     into v_customer_name, v_customer_email, v_customer_phone
   from public.profiles where id = v_user_id;
 
   insert into public.ordenes (user_id, customer_name, customer_email, phone, delivery_method, zona_entrega, address, shipping_cost, subtotal, total)
-  values (v_user_id, v_customer_name, v_customer_email, v_customer_phone, delivery_method, zona_entrega, address, coalesce(shipping_cost, 0), 0, 0)
+  values (v_user_id, v_customer_name, v_customer_email, v_customer_phone, delivery_method, zona_entrega, address, v_shipping_cost, 0, 0)
   returning id, ordenes.order_number into v_order_id, v_order_number;
 
   for item in select * from jsonb_array_elements(items)
@@ -239,7 +263,7 @@ begin
     values (v_order_id, v_product.id, v_product.nombre, v_product.precio, (item ->> 'cantidad')::integer, v_item_subtotal);
   end loop;
 
-  v_total := v_subtotal + coalesce(shipping_cost, 0);
+  v_total := v_subtotal + v_shipping_cost;
 
   update public.ordenes
     set subtotal = v_subtotal, total = v_total

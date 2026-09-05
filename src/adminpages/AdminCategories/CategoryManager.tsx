@@ -43,6 +43,16 @@ const normalizeText = (value: string) =>
     .toLowerCase()
     .trim();
 
+// Genera autom\u00e1ticamente el id/slug de b\u00fasqueda a partir del nombre escrito:
+// una sola palabra queda en min\u00fascula ("Computadoras" -> "computadoras"),
+// y varias palabras se juntan sin espacios ("Parlantes de PC" -> "parlantesdepc")
+// para que la b\u00fasqueda sea m\u00e1s r\u00e1pida y no haya que escribir el id a mano.
+const generateSlug = (value: string) =>
+  normalizeText(value)
+    .split(/\s+/)
+    .filter(Boolean)
+    .join("");
+
 const CategoryManager = () => {
   const navigate = useNavigate();
 
@@ -255,12 +265,16 @@ const CategoryManager = () => {
   };
 
   const saveCategory = async () => {
-    if (!newCategory.name.trim() || !newCategory.id.trim()) {
-      alert("Completa todos los campos de la categoría");
+    if (!newCategory.name.trim()) {
+      alert("Completa el nombre de la categoría");
       return;
     }
 
-    const normalizedId = newCategory.id.trim().toLowerCase().replace(/\s+/g, "-");
+    // Al editar se conserva el id original (no se regenera desde el nombre)
+    // para no romper las secciones/enlaces que ya dependen de él.
+    const normalizedId = editingCategory
+      ? newCategory.id.trim().toLowerCase().replace(/\s+/g, "-")
+      : generateSlug(newCategory.name);
 
     const categoryPayload: CategoriaCreate = {
       categoria: normalizedId,
@@ -330,19 +344,15 @@ const CategoryManager = () => {
   };
 
   const saveSection = async () => {
-    if (
-      !newSection.title.trim() ||
-      !newSection.subcategoria.trim() ||
-      !newSection.categoryId
-    ) {
+    if (!newSection.title.trim() || !newSection.categoryId) {
       alert("Completa todos los campos de la sección");
       return;
     }
 
-    const normalizedSubcategory = newSection.subcategoria
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-");
+    // Igual que con la categoría: al editar se conserva el id original.
+    const normalizedSubcategory = editingSection
+      ? newSection.subcategoria.trim().toLowerCase().replace(/\s+/g, "-")
+      : generateSlug(newSection.title);
 
     const parentCategory = categories.find(
       (cat) => cat.id === newSection.categoryId
@@ -386,20 +396,15 @@ const CategoryManager = () => {
   };
 
   const saveLink = async () => {
-    if (
-      !newLink.label.trim() ||
-      !newLink.tipo.trim() ||
-      !newLink.sectionId ||
-      !newLink.categoryId
-    ) {
+    if (!newLink.label.trim() || !newLink.sectionId || !newLink.categoryId) {
       alert("Completa todos los campos del enlace");
       return;
     }
 
-    const normalizedTipo = newLink.tipo
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-");
+    // Igual que con categoría y sección: al editar se conserva el id original.
+    const normalizedTipo = editingLink
+      ? newLink.tipo.trim().toLowerCase().replace(/\s+/g, "-")
+      : generateSlug(newLink.label);
 
     const parentCategory = categories.find(
       (cat) => cat.id === newLink.categoryId
@@ -565,15 +570,6 @@ const CategoryManager = () => {
               <div className="form-row column">
                 <input
                   type="text"
-                  placeholder="ID de categoría (ej: computadoras)"
-                  value={newCategory.id}
-                  onChange={(e) =>
-                    setNewCategory({ ...newCategory, id: e.target.value })
-                  }
-                  className="form-input"
-                />
-                <input
-                  type="text"
                   placeholder="Nombre de categoría (ej: Computadoras)"
                   value={newCategory.name}
                   onChange={(e) =>
@@ -729,21 +725,6 @@ const CategoryManager = () => {
                       }
                       className="form-input small"
                     />
-                    <input
-                      type="text"
-                      placeholder="ID subcategoría"
-                      value={
-                        newSection.categoryId === category.id ? newSection.subcategoria : ""
-                      }
-                      onChange={(e) =>
-                        setNewSection({
-                          ...newSection,
-                          subcategoria: e.target.value,
-                          categoryId: category.id,
-                        })
-                      }
-                      className="form-input small"
-                    />
                   </div>
 
                   {newSection.categoryId === category.id &&
@@ -840,20 +821,6 @@ const CategoryManager = () => {
                               setNewLink({
                                 ...newLink,
                                 label: e.target.value,
-                                sectionId: section.subcategoria,
-                                categoryId: category.id,
-                              })
-                            }
-                            className="form-input small"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Tipo interno"
-                            value={newLink.sectionId === section.subcategoria ? newLink.tipo : ""}
-                            onChange={(e) =>
-                              setNewLink({
-                                ...newLink,
-                                tipo: e.target.value,
                                 sectionId: section.subcategoria,
                                 categoryId: category.id,
                               })

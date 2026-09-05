@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../auth/Auth.css";
+
+const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -13,6 +15,20 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
+
+  // Precarga el correo recordado (si existe) al entrar a la página.
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+      if (savedEmail) {
+        setCorreo(savedEmail);
+        setRememberEmail(true);
+      }
+    } catch (error) {
+      console.error("No se pudo leer el correo recordado:", error);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +42,16 @@ const Login = () => {
       });
 
       if (response?.data?.access_token) {
+        try {
+          if (rememberEmail) {
+            localStorage.setItem(REMEMBERED_EMAIL_KEY, correo);
+          } else {
+            localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+          }
+        } catch (error) {
+          console.error("No se pudo guardar el correo recordado:", error);
+        }
+
         await loadUserProfile();
         navigate("/");
       } else {
@@ -74,6 +100,15 @@ const Login = () => {
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
+
+            <label className="auth-remember-email">
+              <input
+                type="checkbox"
+                checked={rememberEmail}
+                onChange={(e) => setRememberEmail(e.target.checked)}
+              />
+              Recordar correo
+            </label>
 
             <button
               type="submit"
