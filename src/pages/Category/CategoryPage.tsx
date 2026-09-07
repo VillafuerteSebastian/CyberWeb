@@ -237,12 +237,34 @@ const CategoryPage = () => {
     );
   }, [products]);
 
-  // Opciones dinámicas de filtros según productos cargados
+  // Opciones dinámicas de filtros según productos cargados. Las marcas se
+  // acotan a la subcategoría/tipo ya elegidos (si hay), no a todo el
+  // catálogo de la categoría — si estás viendo "Guitarras" no tiene sentido
+  // ofrecer marcas que solo existen en "Baterías".
   const availableBrands = useMemo(() => {
-    return [...new Set(products.map((p) => p.marca).filter(Boolean))].sort((a, b) =>
+    const relevantProducts = products.filter((product) =>
+      product.asignaciones.some((tipos) => {
+        const productSubcategoria = tipos[0]?.tipo || "";
+        const productTipoFinal = tipos[1]?.tipo || "";
+
+        if (selectedSubcategoria && productSubcategoria !== selectedSubcategoria) return false;
+        if (selectedTipo && productTipoFinal !== selectedTipo) return false;
+
+        return true;
+      })
+    );
+
+    return [...new Set(relevantProducts.map((p) => p.marca).filter(Boolean))].sort((a, b) =>
       a.localeCompare(b)
     );
-  }, [products]);
+  }, [products, selectedSubcategoria, selectedTipo]);
+
+  // Si al angostar por subcategoría/tipo una marca ya marcada deja de tener
+  // sentido (no aparece más en la lista), se destilda sola — si no, seguiría
+  // filtrando "en secreto" sin que el checkbox esté siquiera visible.
+  useEffect(() => {
+    setSelectedBrands((prev) => prev.filter((marca) => availableBrands.includes(marca)));
+  }, [availableBrands]);
 
   const availableSubcategorias = useMemo(() => {
     return [
