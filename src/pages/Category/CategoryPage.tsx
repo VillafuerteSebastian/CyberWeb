@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { HiChevronDown } from "react-icons/hi2";
 import { HiAdjustmentsHorizontal, HiXMark } from "react-icons/hi2";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
+import categoryService, { type ArbolCategoria } from "../../services/categoryService";
 import { formatPrice } from "../../utils/format";
 import "./CategoryPage.css";
 
@@ -19,7 +20,19 @@ type Product = {
   precio_oferta?: number | null;
   categoria: string;
   marca: string;
-  tipos: ProductType[];
+  // Todas las combinaciones subcategoría+tipo bajo las que este producto
+  // aplica a la categoría que se está viendo: su asignación principal (si
+  // `categoria` es la suya) más una entrada por cada categoría adicional que
+  // coincida. Un producto puede tener varias bajo la misma categoría (ej.
+  // "Instrumento" en dos subcategorías/tipos distintos a la vez), así que no
+  // alcanza con guardar una sola — si no, los filtros de subcategoría/tipo
+  // solo "ven" la primera y las demás quedan sin productos.
+  asignaciones: ProductType[][];
+  // Atributos filtrables de libre formato (ej: "Conexión" -> "USB"), ajenos
+  // al árbol categoria/subcategoria/tipo. Varias entradas con el mismo
+  // nombre representan varios valores a la vez (ej: un mouse con USB y
+  // Bluetooth).
+  atributos: { nombre: string; valor: string }[];
   stock: number;
   image?: string;
 };
@@ -44,15 +57,58 @@ const CategoryPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Árbol de categorías (categoria -> subcategorias -> tipos) con sus nombres
+  // visibles (nombre_categoria, nombre_subcategoria, nombre_tipo), para
+  // mostrar en pantalla el nombre real en vez del id/slug que se usa en la
+  // URL de búsqueda (ej. "audio-video" en la URL, "Audio y Video" en pantalla).
+  const [categoryTree, setCategoryTree] = useState<ArbolCategoria[]>([]);
+
+  useEffect(() => {
+    categoryService
+      .getCategoryTree()
+      .then(setCategoryTree)
+      .catch((error) => {
+        console.error("Error al cargar nombres de categorías:", error);
+        setCategoryTree([]);
+      });
+  }, []);
+
   // Filtros dinámicos locales
-  const [selectedBrand, setSelectedBrand] = useState("");
+  // Marca es multi-selección (checkboxes), igual que los atributos: podés
+  // marcar varias marcas a la vez y ver productos de cualquiera de ellas.
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSubcategoria, setSelectedSubcategoria] = useState(subcategoria || "");
   const [selectedTipo, setSelectedTipo] = useState(tipo || "");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [onlyInStock, setOnlyInStock] = useState(false);
   const [sortOrder, setSortOrder] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  // Valores marcados por atributo (ej: { "Conexión": ["USB", "Bluetooth"] }).
+  // Multi-selección: dentro de un mismo atributo es "o" (cualquiera de los
+  // marcados), entre atributos distintos es "y" (tiene que cumplir todos).
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string[]>>({});
+
+  const toggleAttributeValue = (nombre: string, valor: string) => {
+    setSelectedAttributes((prev) => {
+      const current = prev[nombre] || [];
+      const next = current.includes(valor)
+        ? current.filter((v) => v !== valor)
+        : [...current, valor];
+
+      if (next.length === 0) {
+        const { [nombre]: _omit, ...rest } = prev;
+        return rest;
+      }
+
+      return { ...prev, [nombre]: next };
+    });
+  };
+
+  const toggleBrand = (marca: string) => {
+    setSelectedBrands((prev) =>
+      prev.includes(marca) ? prev.filter((m) => m !== marca) : [...prev, marca]
+    );
+  };
 
   // Acordeón de secciones del sidebar de filtros
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -61,7 +117,6 @@ const CategoryPage = () => {
     subcategoria: true,
     tipo: true,
     precio: true,
-    disponibilidad: true,
   });
 
   const toggleSection = (id: string) => {
@@ -101,23 +156,34 @@ const CategoryPage = () => {
         }
 
         const formattedProducts: Product[] = rawProducts.map((product: any) => {
-          // Si el producto llega por una categoría adicional (no la
-          // principal), sus subcategoría/tipo para esta página son los de
-          // esa asignación adicional, no los de la categoría principal.
+          // Reúne TODAS las asignaciones (subcategoría+tipo) del producto que
+          // apliquen a la categoría que se está viendo: la principal (si es
+          // suya) y cada categoría adicional que coincida — puede haber más
+          // de una bajo la misma categoría.
           const categoriasExtra = Array.isArray(product.categorias_extra)
             ? product.categorias_extra
             : [];
-          const extraMatch =
-            categoria && product.categoria !== categoria
-              ? categoriasExtra.find(
-                  (c: { categoria: string; tipos: ProductType[] }) => c.categoria === categoria
-                )
-              : null;
-          const tipos = extraMatch?.tipos && Array.isArray(extraMatch.tipos)
-            ? extraMatch.tipos
-            : Array.isArray(product.tipos)
-            ? product.tipos
-            : [];
+
+          const asignaciones: ProductType[][] = [];
+
+          if (!categoria || product.categoria === categoria) {
+            asignaciones.push(Array.isArray(product.tipos) ? product.tipos : []);
+          }
+
+          if (categoria) {
+            categoriasExtra
+              .filter((extra: { categoria: string }) => extra.categoria === categoria)
+              .forEach((extra: { tipos?: ProductType[] }) => {
+                asignaciones.push(Array.isArray(extra.tipos) ? extra.tipos : []);
+              });
+          }
+
+          // No debería pasar (el producto llegó filtrado por esta categoría),
+          // pero por si acaso no se encontró ninguna asignación que coincida,
+          // se usa su propio `tipos` como respaldo.
+          if (asignaciones.length === 0) {
+            asignaciones.push(Array.isArray(product.tipos) ? product.tipos : []);
+          }
 
           return {
             id: String(product.id || product._id || ""),
@@ -130,7 +196,8 @@ const CategoryPage = () => {
                 : null,
             categoria: categoria || product.categoria || "",
             marca: product.marca || "",
-            tipos,
+            asignaciones,
+            atributos: Array.isArray(product.atributos) ? product.atributos : [],
             stock: Number(product.stock ?? 0),
             image: product.image || "/placeholder-product.png",
           };
@@ -148,6 +215,28 @@ const CategoryPage = () => {
     fetchProducts();
   }, [categoria]);
 
+  // Atributos disponibles según los productos cargados, agrupados por
+  // nombre con sus valores únicos (ej: { "Conexión": ["Bluetooth", "USB"] }).
+  // Solo aparecen los atributos que realmente tiene algún producto de esta
+  // categoría — no es una lista fija.
+  const availableAttributes = useMemo(() => {
+    const grouped: Record<string, Set<string>> = {};
+
+    products.forEach((product) => {
+      product.atributos.forEach(({ nombre, valor }) => {
+        if (!nombre || !valor) return;
+        if (!grouped[nombre]) grouped[nombre] = new Set();
+        grouped[nombre].add(valor);
+      });
+    });
+
+    return Object.fromEntries(
+      Object.entries(grouped)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([nombre, valores]) => [nombre, Array.from(valores).sort((a, b) => a.localeCompare(b))])
+    );
+  }, [products]);
+
   // Opciones dinámicas de filtros según productos cargados
   const availableBrands = useMemo(() => {
     return [...new Set(products.map((p) => p.marca).filter(Boolean))].sort((a, b) =>
@@ -159,29 +248,60 @@ const CategoryPage = () => {
     return [
       ...new Set(
         products
-          .map((p) => (Array.isArray(p.tipos) ? p.tipos[0]?.tipo : ""))
+          .flatMap((p) => p.asignaciones)
+          .map((tipos) => tipos[0]?.tipo || "")
           .filter(Boolean)
       ),
     ].sort((a, b) => a.localeCompare(b));
   }, [products]);
 
   const availableTipos = useMemo(() => {
-    let baseProducts = [...products];
+    let asignaciones = products.flatMap((p) => p.asignaciones);
 
     if (selectedSubcategoria) {
-      baseProducts = baseProducts.filter(
-        (p) => (Array.isArray(p.tipos) ? p.tipos[0]?.tipo : "") === selectedSubcategoria
-      );
+      asignaciones = asignaciones.filter((tipos) => (tipos[0]?.tipo || "") === selectedSubcategoria);
     }
 
     return [
-      ...new Set(
-        baseProducts
-          .map((p) => (Array.isArray(p.tipos) ? p.tipos[1]?.tipo : ""))
-          .filter(Boolean)
-      ),
+      ...new Set(asignaciones.map((tipos) => tipos[1]?.tipo || "").filter(Boolean)),
     ].sort((a, b) => a.localeCompare(b));
   }, [products, selectedSubcategoria]);
+
+  // Nodo de la categoría actual dentro del árbol, y helpers para resolver el
+  // nombre visible de una subcategoría/tipo a partir de su slug. El id/slug
+  // de la URL es solo para buscar — en pantalla siempre debe verse el nombre
+  // guardado en la tabla `categorias` (con fallback a una versión legible del
+  // slug si esa categoría ya no existe en el árbol, ej. una borrada).
+  const categoriaInfo = useMemo(
+    () => categoryTree.find((c) => c.categoria === categoria),
+    [categoryTree, categoria]
+  );
+
+  const categoriaNombre = categoriaInfo?.nombre_categoria || prettifySlug(categoria);
+
+  const getSubcategoriaNombre = useCallback(
+    (subcategoriaSlug: string) =>
+      categoriaInfo?.subcategorias?.[subcategoriaSlug]?.nombre || prettifySlug(subcategoriaSlug),
+    [categoriaInfo]
+  );
+
+  const getTipoNombre = useCallback(
+    (tipoSlug: string, subcategoriaSlug?: string) => {
+      if (!categoriaInfo) return prettifySlug(tipoSlug);
+
+      const subcategoriasAConsultar = subcategoriaSlug
+        ? [categoriaInfo.subcategorias[subcategoriaSlug]].filter(Boolean)
+        : Object.values(categoriaInfo.subcategorias);
+
+      for (const sub of subcategoriasAConsultar) {
+        const encontrado = sub?.tipos.find((t) => t.tipo === tipoSlug);
+        if (encontrado) return encontrado.nombre;
+      }
+
+      return prettifySlug(tipoSlug);
+    },
+    [categoriaInfo]
+  );
 
   const priceRange = useMemo(() => {
     if (!products.length) {
@@ -199,20 +319,40 @@ const CategoryPage = () => {
     let result = [...products];
 
     result = result.filter((product) => {
-      const tipos = Array.isArray(product.tipos) ? product.tipos : [];
-      const productSubcategoria = tipos[0]?.tipo || "";
-      const productTipoFinal = tipos[1]?.tipo || "";
+      // El producto pasa el filtro de subcategoría/tipo si CUALQUIERA de sus
+      // asignaciones a esta categoría calza (no solo la primera) — así una
+      // categoría adicional que no sea la primera de la lista no queda
+      // invisible para los filtros.
+      const matchesAlgunaAsignacion = product.asignaciones.some((tipos) => {
+        const productSubcategoria = tipos[0]?.tipo || "";
+        const productTipoFinal = tipos[1]?.tipo || "";
 
-      // filtros que vienen desde URL o seleccionados
-      if (selectedSubcategoria && productSubcategoria !== selectedSubcategoria) {
+        if (selectedSubcategoria && productSubcategoria !== selectedSubcategoria) return false;
+        if (selectedTipo && productTipoFinal !== selectedTipo) return false;
+
+        return true;
+      });
+
+      if (!matchesAlgunaAsignacion) {
         return false;
       }
 
-      if (selectedTipo && productTipoFinal !== selectedTipo) {
+      if (selectedBrands.length > 0 && !selectedBrands.includes(product.marca)) {
         return false;
       }
 
-      if (selectedBrand && product.marca !== selectedBrand) {
+      // Por cada atributo con valores marcados, el producto tiene que tener
+      // AL MENOS UNO de esos valores (dentro del atributo es "o"); tiene que
+      // cumplir esto para TODOS los atributos con selección a la vez
+      // (entre atributos distintos es "y").
+      const matchesAttributes = Object.entries(selectedAttributes).every(
+        ([nombre, valoresSeleccionados]) =>
+          product.atributos.some(
+            (a) => a.nombre === nombre && valoresSeleccionados.includes(a.valor)
+          )
+      );
+
+      if (!matchesAttributes) {
         return false;
       }
 
@@ -224,10 +364,6 @@ const CategoryPage = () => {
         return false;
       }
 
-      if (onlyInStock && product.stock <= 0) {
-        return false;
-      }
-
       if (search) {
         const term = search.toLowerCase().trim();
 
@@ -235,8 +371,8 @@ const CategoryPage = () => {
         const matchesDescripcion = product.descripcion.toLowerCase().includes(term);
         const matchesMarca = product.marca.toLowerCase().includes(term);
         const matchesCategoria = product.categoria.toLowerCase().includes(term);
-        const matchesTipos = tipos.some((item) =>
-          item.tipo.toLowerCase().includes(term)
+        const matchesTipos = product.asignaciones.some((tipos) =>
+          tipos.some((item) => item.tipo.toLowerCase().includes(term))
         );
 
         if (
@@ -268,10 +404,10 @@ const CategoryPage = () => {
     products,
     selectedSubcategoria,
     selectedTipo,
-    selectedBrand,
+    selectedBrands,
+    selectedAttributes,
     minPrice,
     maxPrice,
-    onlyInStock,
     sortOrder,
     search,
   ]);
@@ -282,19 +418,19 @@ const CategoryPage = () => {
     }
 
     if (categoria && selectedSubcategoria && selectedTipo) {
-      return `${prettifySlug(categoria)} - ${prettifySlug(selectedTipo)}`;
+      return `${categoriaNombre} - ${getTipoNombre(selectedTipo, selectedSubcategoria)}`;
     }
 
     if (categoria && selectedSubcategoria) {
-      return `${prettifySlug(categoria)} - ${prettifySlug(selectedSubcategoria)}`;
+      return `${categoriaNombre} - ${getSubcategoriaNombre(selectedSubcategoria)}`;
     }
 
     if (categoria) {
-      return prettifySlug(categoria);
+      return categoriaNombre;
     }
 
     return "Catálogo";
-  }, [categoria, selectedSubcategoria, selectedTipo, search]);
+  }, [categoria, selectedSubcategoria, selectedTipo, search, categoriaNombre, getSubcategoriaNombre, getTipoNombre]);
 
   const breadcrumb = useMemo(() => {
     if (search) {
@@ -303,12 +439,12 @@ const CategoryPage = () => {
 
     let text = "Inicio";
 
-    if (categoria) text += ` / ${prettifySlug(categoria)}`;
-    if (selectedSubcategoria) text += ` / ${prettifySlug(selectedSubcategoria)}`;
-    if (selectedTipo) text += ` / ${prettifySlug(selectedTipo)}`;
+    if (categoria) text += ` / ${categoriaNombre}`;
+    if (selectedSubcategoria) text += ` / ${getSubcategoriaNombre(selectedSubcategoria)}`;
+    if (selectedTipo) text += ` / ${getTipoNombre(selectedTipo, selectedSubcategoria)}`;
 
     return text;
-  }, [categoria, selectedSubcategoria, selectedTipo, search]);
+  }, [categoria, selectedSubcategoria, selectedTipo, search, categoriaNombre, getSubcategoriaNombre, getTipoNombre]);
 
   const FilterSection = ({
     id,
@@ -338,23 +474,23 @@ const CategoryPage = () => {
     );
   };
 
-  const activeFilterCount = [
-    selectedBrand,
-    selectedSubcategoria,
-    selectedTipo,
-    minPrice,
-    maxPrice,
-    sortOrder,
-    onlyInStock ? "stock" : "",
-  ].filter(Boolean).length;
+  const selectedAttributeCount = Object.values(selectedAttributes).reduce(
+    (total, valores) => total + valores.length,
+    0
+  );
+
+  const activeFilterCount =
+    [selectedSubcategoria, selectedTipo, minPrice, maxPrice, sortOrder].filter(Boolean).length +
+    selectedBrands.length +
+    selectedAttributeCount;
 
   const resetFilters = () => {
-    setSelectedBrand("");
+    setSelectedBrands([]);
     setSelectedSubcategoria(subcategoria || "");
     setSelectedTipo(tipo || "");
+    setSelectedAttributes({});
     setMinPrice("");
     setMaxPrice("");
-    setOnlyInStock(false);
     setSortOrder("");
   };
 
@@ -443,17 +579,18 @@ return (
 
           {availableBrands.length > 0 && (
             <FilterSection id="marca" title="Marca">
-              <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-              >
-                <option value="">Todas</option>
+              <div className="filter-checkbox-list">
                 {availableBrands.map((brand) => (
-                  <option key={brand} value={brand}>
+                  <button
+                    key={brand}
+                    type="button"
+                    className={`filter-option-btn ${selectedBrands.includes(brand) ? "active" : ""}`}
+                    onClick={() => toggleBrand(brand)}
+                  >
                     {brand}
-                  </option>
+                  </button>
                 ))}
-              </select>
+              </div>
             </FilterSection>
           )}
 
@@ -469,7 +606,7 @@ return (
                 <option value="">Todas</option>
                 {availableSubcategorias.map((item) => (
                   <option key={item} value={item}>
-                    {item}
+                    {getSubcategoriaNombre(item)}
                   </option>
                 ))}
               </select>
@@ -485,12 +622,31 @@ return (
                 <option value="">Todos</option>
                 {availableTipos.map((item) => (
                   <option key={item} value={item}>
-                    {item}
+                    {getTipoNombre(item, selectedSubcategoria)}
                   </option>
                 ))}
               </select>
             </FilterSection>
           )}
+
+          {Object.entries(availableAttributes).map(([nombre, valores]) => (
+            <FilterSection key={nombre} id={`attr-${nombre}`} title={nombre}>
+              <div className="filter-checkbox-list">
+                {valores.map((valor) => (
+                  <button
+                    key={valor}
+                    type="button"
+                    className={`filter-option-btn ${
+                      (selectedAttributes[nombre] || []).includes(valor) ? "active" : ""
+                    }`}
+                    onClick={() => toggleAttributeValue(nombre, valor)}
+                  >
+                    {valor}
+                  </button>
+                ))}
+              </div>
+            </FilterSection>
+          ))}
 
           <FilterSection id="precio" title="Precio">
             <div className="filter-price-row">
@@ -512,17 +668,6 @@ return (
                 placeholder={formatPrice(priceRange.max)}
               />
             </div>
-          </FilterSection>
-
-          <FilterSection id="disponibilidad" title="Disponibilidad">
-            <label className="filter-check-inline">
-              <input
-                type="checkbox"
-                checked={onlyInStock}
-                onChange={(e) => setOnlyInStock(e.target.checked)}
-              />
-              Solo disponibles
-            </label>
           </FilterSection>
 
           <button

@@ -204,11 +204,68 @@
   color: var(--text-muted);
 }
 
-/* ===== GRID ===== */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+/* ===== CARRUSEL DE DESTACADOS ===== */
+.products-carousel-wrapper {
+  position: relative;
+}
+
+.products-carousel {
+  display: flex;
   gap: 1.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding-bottom: 0.4rem;
+  /* Oculta la barra de scroll nativa: la navegación es por flechas o swipe. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.products-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.products-carousel .product-card {
+  flex: 0 0 220px;
+  scroll-snap-align: start;
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 40%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-elev-md);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.carousel-arrow:hover:not(:disabled) {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.carousel-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.carousel-arrow-left {
+  left: -20px;
+}
+
+.carousel-arrow-right {
+  right: -20px;
 }
 
 /* ===== PRODUCT CARD ===== */
@@ -383,12 +440,6 @@
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1200px) {
-  .products-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 @media (max-width: 1024px) {
   .hero {
     min-height: 380px;
@@ -398,9 +449,8 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.2rem;
+  .products-carousel .product-card {
+    flex-basis: 200px;
   }
 }
 
@@ -483,9 +533,18 @@
     font-size: 1.3rem;
   }
 
-  .products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1rem;
+  .products-carousel {
+    gap: 0.8rem;
+  }
+
+  .products-carousel .product-card {
+    flex-basis: 160px;
+  }
+
+  /* En móvil la navegación es por swipe, no hacen falta las flechas
+     flotando sobre la primera/última tarjeta. */
+  .carousel-arrow {
+    display: none;
   }
 
   /* Tarjeta compacta, como la referencia: padding e imagen más chicos, el
@@ -567,9 +626,8 @@
     padding-right: 0.75rem;
   }
 
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem;
+  .products-carousel .product-card {
+    flex-basis: 42vw;
   }
 
   .product-card {

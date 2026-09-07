@@ -163,20 +163,42 @@
   flex-shrink: 0;
 }
 
-.filter-check-inline {
+.filter-checkbox-list {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* Opción de filtro (marca, valor de atributo) como texto clickeable, sin
+   casillero — el estado marcado/no marcado se ve en el propio texto
+   (fondo + color), no en un cuadrito aparte. */
+.filter-option-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: none;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
   font-size: 13.5px;
   font-weight: 500;
   color: var(--text-secondary);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.filter-check-inline input {
-  accent-color: var(--accent);
-  width: 17px;
-  height: 17px;
+.filter-option-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.filter-option-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--border-accent);
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .reset-filters-btn {

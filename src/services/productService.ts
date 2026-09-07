@@ -17,6 +17,17 @@ export type ProductoCategoriaExtra = {
   tipos: ProductoTipo[];
 };
 
+/** Atributo filtrable de libre formato que no encaja en el árbol fijo
+ * categoria/subcategoria/tipo (ej: { nombre: "Conexión", valor: "USB" }).
+ * Misma forma flat que `ProductoVariante` (un par por valor, no un array de
+ * valores) para que un producto pueda tener varios valores del mismo
+ * atributo a la vez (ej: un mouse con USB y Bluetooth = dos entradas con
+ * `nombre: "Conexión"`), igual que ya funciona con `variantes`. */
+export type ProductoAtributo = {
+  nombre: string;
+  valor: string;
+};
+
 export interface ProductoRow {
   id: string;
   nombre: string;
@@ -36,6 +47,8 @@ export interface ProductoRow {
    * una con su propia subcategoría/tipo, además de `categoria` (ej: un
    * headset en "audio-video" y también en "gaming" > "accesorios"). */
   categorias_extra: ProductoCategoriaExtra[];
+  /** Atributos filtrables adicionales (ver `ProductoAtributo`). */
+  atributos: ProductoAtributo[];
   created_at?: string;
   updated_at?: string;
 }
@@ -55,6 +68,7 @@ export interface ProductoCreate {
   bullets?: string[];
   variantes?: ProductoVariante[];
   categorias_extra?: ProductoCategoriaExtra[];
+  atributos?: ProductoAtributo[];
 }
 
 export type ProductoUpdate = Partial<ProductoCreate> & { available?: boolean };
@@ -140,7 +154,15 @@ class ProductService {
         .from(TABLE)
         .select("*")
         .eq("is_deleted", false)
-        .contains("categorias_extra", [{ categoria }]),
+        // OJO: .contains() sobre una columna jsonb necesita el valor como
+        // string JSON ya serializado. Si se le pasa el array de JS tal cual,
+        // supabase-js lo manda como literal de array de Postgres ("{...}")
+        // en vez de JSON ("[...]") y Postgres responde "invalid input syntax
+        // for type json" (código 22P02) — con eso, esta consulta fallaba
+        // siempre, sin importar si el producto tenía o no esa categoría
+        // extra, y como el error se relanza más abajo, ninguna categoría
+        // (ni las de antes ni las nuevas) llegaba a mostrar productos.
+        .contains("categorias_extra", JSON.stringify([{ categoria }])),
     ]);
 
     if (primary.error) {
@@ -195,6 +217,7 @@ class ProductService {
         bullets: payload.bullets || [],
         variantes: payload.variantes || [],
         categorias_extra: payload.categorias_extra || [],
+        atributos: payload.atributos || [],
       })
       .select("*")
       .single();

@@ -9,6 +9,11 @@ export interface Categoria {
   nombre_subcategoria?: string;
   tipo?: string;
   nombre_tipo?: string;
+  /** Emoji elegido a mano para el ícono de la categoría (solo aplica a la
+   * fila raíz, sin subcategoria/tipo). Si no está definido, se elige uno
+   * automáticamente según el nombre — ver `guessCategoryIcon` en
+   * `data/categoryData.tsx`. */
+  icono?: string;
   created_at?: string;
   updated_at?: string;
   is_deleted?: boolean;
@@ -21,6 +26,7 @@ export interface CategoriaCreate {
   nombre_subcategoria?: string;
   tipo?: string;
   nombre_tipo?: string;
+  icono?: string;
 }
 
 export interface CategoriaUpdate {
@@ -30,6 +36,8 @@ export interface CategoriaUpdate {
   nombre_subcategoria?: string;
   tipo?: string;
   nombre_tipo?: string;
+  /** string para fijar un emoji, null para borrarlo (vuelve al automático). */
+  icono?: string | null;
 }
 
 export interface CategoriaUnica {
@@ -50,6 +58,8 @@ export interface TipoPorCategoriaSubcategoria {
 export interface ArbolCategoria {
   categoria: string;
   nombre_categoria: string;
+  /** Emoji personalizado de la categoría (fila raíz), si el admin definió uno. */
+  icono?: string;
   subcategorias: {
     [key: string]: {
       nombre: string;
@@ -72,6 +82,7 @@ const rowToCategoria = (row: any): Categoria => ({
   nombre_subcategoria: row.nombre_subcategoria || undefined,
   tipo: row.tipo || undefined,
   nombre_tipo: row.nombre_tipo || undefined,
+  icono: row.icono || undefined,
   created_at: row.created_at,
   updated_at: row.updated_at,
   is_deleted: row.is_deleted,
@@ -97,6 +108,11 @@ const buildCategoryTree = (rows: Categoria[]): ArbolCategoria[] => {
     const nombre_categoria =
       catRows.find((r) => r.nombre_categoria)?.nombre_categoria || categoria;
 
+    // El emoji personalizado solo tiene sentido en la fila raíz (sin
+    // subcategoria), que es la única que el formulario de categoría llega a
+    // escribir con `icono`.
+    const icono = catRows.find((r) => !r.subcategoria && r.icono)?.icono;
+
     const subcategorias: ArbolCategoria["subcategorias"] = {};
 
     catRows.forEach((row) => {
@@ -119,7 +135,7 @@ const buildCategoryTree = (rows: Categoria[]): ArbolCategoria[] => {
       }
     });
 
-    tree.push({ categoria, nombre_categoria, subcategorias });
+    tree.push({ categoria, nombre_categoria, icono, subcategorias });
   });
 
   return tree;
@@ -249,6 +265,7 @@ class CategoryService {
           nombre_subcategoria: categoryData.nombre_subcategoria || null,
           tipo: categoryData.tipo || null,
           nombre_tipo: categoryData.nombre_tipo || null,
+          icono: categoryData.icono || null,
         })
         .select("id")
         .single();

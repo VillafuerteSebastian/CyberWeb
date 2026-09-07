@@ -7,6 +7,9 @@ import {
   HiWifi,
   HiPrinter,
   HiShieldCheck,
+  HiMusicalNote,
+  HiHome,
+  HiOutlineSquares2X2,
 } from "react-icons/hi2";
 import categoryService, { type Categoria } from "../services/categoryService";
 
@@ -33,19 +36,58 @@ export type CategoryItem = {
   id: string;
   name: string;
   icon: ReactNode;
+  /** Emoji personalizado elegido a mano para esta categoría (si el admin lo
+   * definió), guardado aparte de `icon` porque un ReactNode ya resuelto no
+   * sobrevive el paso por localStorage — se necesita el string crudo para
+   * poder recalcular `icon` al restaurar desde caché. */
+  icono?: string;
   sections: CategorySection[];
   _id?: string;
 };
 
-// Icon mapping
-const iconMap: Record<string, ReactNode> = {
-  computadoras: <HiComputerDesktop />,
-  gaming: <HiPuzzlePiece />,
-  "audio-video": <HiSpeakerWave />,
-  celulares: <HiDevicePhoneMobile />,
-  conectividad: <HiWifi />,
-  impresion: <HiPrinter />,
-  seguridad: <HiShieldCheck />,
+const normalizeText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
+
+// Ícono automático según el nombre de la categoría, para cuando no se le
+// puso un emoji a mano. Es una detección por palabras clave, no una lista de
+// categorías fijas, así que también sirve para categorías nuevas que no
+// existían cuando se escribió esta lista — mejor eso que asumir que todo lo
+// que no reconoce es una computadora.
+const ICON_KEYWORDS: Array<{ icon: ReactNode; keywords: string[] }> = [
+  { icon: <HiComputerDesktop />, keywords: ["comput", "pc", "laptop", "notebook", "portatil"] },
+  { icon: <HiPuzzlePiece />, keywords: ["gam", "juego", "consola", "videojueg"] },
+  { icon: <HiSpeakerWave />, keywords: ["audio", "sonido", "parlante", "altavoz", "bocina"] },
+  { icon: <HiDevicePhoneMobile />, keywords: ["celular", "movil", "phone", "tablet", "smartphone"] },
+  { icon: <HiWifi />, keywords: ["red", "wifi", "conectiv", "router", "network"] },
+  { icon: <HiPrinter />, keywords: ["impres", "printer", "tinta", "toner"] },
+  { icon: <HiShieldCheck />, keywords: ["segur", "camara", "alarma", "vigilan"] },
+  {
+    icon: <HiMusicalNote />,
+    keywords: ["instrument", "musica", "guitar", "bajo", "bateria", "balada", "cancion", "piano"],
+  },
+  { icon: <HiHome />, keywords: ["hogar", "casa", "electrodomestic", "cocina"] },
+];
+
+const guessCategoryIcon = (nombreCategoria: string, categoriaSlug: string): ReactNode => {
+  const haystack = normalizeText(`${nombreCategoria} ${categoriaSlug}`);
+  const match = ICON_KEYWORDS.find(({ keywords }) => keywords.some((kw) => haystack.includes(kw)));
+  return match ? match.icon : <HiOutlineSquares2X2 />;
+};
+
+/** Ícono a mostrar para una categoría: el emoji personalizado si lo tiene,
+ * si no uno adivinado a partir de su nombre (nunca un ícono fijo por
+ * defecto que no tenga que ver con la categoría real). */
+export const getCategoryIcon = (
+  nombreCategoria: string,
+  categoriaSlug: string,
+  icono?: string
+): ReactNode => {
+  if (icono && icono.trim()) return icono.trim();
+  return guessCategoryIcon(nombreCategoria, categoriaSlug);
 };
 
 // Fallback disabled (API only)
@@ -89,7 +131,8 @@ const convertApiToCategoryData = (apiData: any[], allCategories: Categoria[]): C
       id: cat.categoria,
       name: cat.nombre_categoria,
       _id: categoryIdMap.get(cat.categoria),
-      icon: iconMap[cat.categoria] || <HiComputerDesktop />,
+      icon: getCategoryIcon(cat.nombre_categoria, cat.categoria, cat.icono),
+      icono: cat.icono || undefined,
       sections: [],
     };
 
@@ -208,7 +251,7 @@ const loadFromCache = (): CategoryItem[] | null => {
     // Restore icons
     return parsedData.map((category: any) => ({
       ...category,
-      icon: iconMap[category.id] || <HiComputerDesktop />,
+      icon: getCategoryIcon(category.name, category.id, category.icono),
     }));
   } catch (error) {
     console.warn("Failed to load categories from cache:", error);

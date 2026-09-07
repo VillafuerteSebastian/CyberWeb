@@ -33,6 +33,10 @@ create table if not exists public.categorias (
   nombre_subcategoria text,
   tipo text,
   nombre_tipo text,
+  -- Emoji elegido a mano para el ícono de la categoría (solo tiene sentido en
+  -- la fila raíz, donde subcategoria/tipo son null); si queda vacío, el
+  -- frontend elige uno automáticamente según nombre_categoria.
+  icono text,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -40,6 +44,9 @@ create table if not exists public.categorias (
 
 create index if not exists categorias_categoria_idx on public.categorias (categoria);
 create index if not exists categorias_subcategoria_idx on public.categorias (categoria, subcategoria);
+
+-- Por si la tabla ya existía de una corrida anterior de este script.
+alter table public.categorias add column if not exists icono text;
 
 -- ----------------------------------------------------------------------------
 -- 3. PRODUCTOS
@@ -60,6 +67,7 @@ create table if not exists public.productos (
   bullets jsonb not null default '[]'::jsonb,
   variantes jsonb not null default '[]'::jsonb,
   categorias_extra jsonb not null default '[]'::jsonb,
+  atributos jsonb not null default '[]'::jsonb,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -83,6 +91,15 @@ alter table public.productos add column if not exists precio_oferta numeric(12, 
 alter table public.productos add column if not exists categorias_extra jsonb not null default '[]'::jsonb;
 
 create index if not exists productos_categorias_extra_idx on public.productos using gin (categorias_extra jsonb_path_ops);
+
+-- Atributos filtrables de libre formato (ej: {nombre:"Conexión",
+-- valor:"USB"}) que no encajan en el árbol fijo categoria/subcategoria/tipo.
+-- Misma forma flat que `variantes`: un par por valor, así un mismo producto
+-- puede tener varios valores del mismo atributo (ej: un mouse con USB y
+-- Bluetooth a la vez = dos entradas con nombre "Conexión").
+alter table public.productos add column if not exists atributos jsonb not null default '[]'::jsonb;
+
+create index if not exists productos_atributos_idx on public.productos using gin (atributos jsonb_path_ops);
 
 -- ----------------------------------------------------------------------------
 -- 4. DESCUENTOS

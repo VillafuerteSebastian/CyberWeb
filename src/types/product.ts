@@ -12,6 +12,7 @@ export type Product = {
   marca: string;
   tipos: ProductType[];
   categorias_extra?: Array<{ categoria: string; tipos: ProductType[] }>;
+  atributos?: Array<{ nombre: string; valor: string }>;
   stock: number;
   image?: string;
   available?: boolean;

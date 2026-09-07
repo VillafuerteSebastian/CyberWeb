@@ -1,7 +1,17 @@
 import "./AdminProduct.css";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUpload, FaTrash, FaEdit, FaStar } from "react-icons/fa";
+import { FaUpload, FaTrash, FaEdit, FaStar, FaTimes } from "react-icons/fa";
+import {
+  HiOutlineIdentification,
+  HiOutlineSquares2X2,
+  HiOutlinePhoto,
+  HiOutlineDocumentText,
+  HiOutlineSparkles,
+  HiOutlineFolderPlus,
+  HiOutlineSwatch,
+  HiOutlineFunnel,
+} from "react-icons/hi2";
 import productService, { isOnSale } from "../../services/productService";
 import { formatPrice } from "../../utils/format";
 import {
@@ -20,20 +30,29 @@ type VarianteProducto = {
   valor: string;
 };
 
+// Atributo filtrable de libre formato (ej: "Conexión" -> "USB"), separado de
+// las variantes porque no es una opción de compra con posible costo extra,
+// sino algo por lo que se puede filtrar en el catálogo (ej: mostrar solo
+// mouses inalámbricos). Misma forma flat: varias entradas con el mismo
+// nombre representan varios valores a la vez (ej: un mouse con USB y
+// Bluetooth).
+type AtributoProducto = {
+  nombre: string;
+  valor: string;
+};
+
 // Una categoría adicional completa: misma forma que la principal
-// (categoria + subcategoria + tipoFinal + tipoEspecifico opcional).
+// (categoria + subcategoria + tipoFinal).
 type CategoriaExtra = {
   categoria: string;
   subcategoria: string;
   tipoFinal: string;
-  tipoEspecifico: string;
 };
 
 const emptyExtraDraft: CategoriaExtra = {
   categoria: "",
   subcategoria: "",
   tipoFinal: "",
-  tipoEspecifico: "",
 };
 
 type AdminProduct = {
@@ -51,6 +70,7 @@ type AdminProduct = {
   tipos: TipoProducto[];
   categoriasExtra: CategoriaExtra[];
   variantes?: VarianteProducto[];
+  atributos?: AtributoProducto[];
   available?: boolean;
 };
 
@@ -61,12 +81,13 @@ const emptyForm = {
   categoria: "",
   subcategoria: "",
   tipoFinal: "",
-  tipoEspecifico: "",
   marca: "N/A",
   bullets: "",
   nuevaMarca: "",
   varianteNombre: "",
   nuevoValorVariante: "",
+  atributoNombre: "",
+  nuevoValorAtributo: "",
 };
 
 const normalizeText = (value: string) =>
@@ -99,6 +120,14 @@ const AddProduct = () => {
   const [extraCategorias, setExtraCategorias] = useState<CategoriaExtra[]>([]);
   const [extraDraft, setExtraDraft] = useState<CategoriaExtra>(emptyExtraDraft);
   const [variantes, setVariantes] = useState<VarianteProducto[]>([]);
+  const [atributos, setAtributos] = useState<AtributoProducto[]>([]);
+  // Ambas secciones son opcionales y no se usan en la mayoría de los
+  // productos, así que arrancan ocultas — solo se muestran si el admin las
+  // abre a propósito, o si el producto que se está editando ya tenía algo
+  // cargado ahí.
+  const [showVariantes, setShowVariantes] = useState(false);
+  const [showAtributos, setShowAtributos] = useState(false);
+  const [showExtraCategorias, setShowExtraCategorias] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
@@ -254,96 +283,6 @@ const AddProduct = () => {
     return section?.links.find((link) => link.tipo === tipoId)?.label || tipoId;
   };
 
-  const computeSpecificOptions = (
-    categoriaId: string,
-    subcategoriaId: string,
-    tipoFinalId: string
-  ): string[] => {
-    if (
-      categoriaId === "computadoras" &&
-      subcategoriaId === "perifericos" &&
-      tipoFinalId === "teclados"
-    ) {
-      return ["mecanico", "membrana"];
-    }
-
-    if (
-      categoriaId === "computadoras" &&
-      subcategoriaId === "perifericos" &&
-      tipoFinalId === "mouses"
-    ) {
-      return ["inalambrico", "cable"];
-    }
-
-    if (
-      categoriaId === "computadoras" &&
-      subcategoriaId === "componentes" &&
-      tipoFinalId === "ram"
-    ) {
-      return ["ddr4", "ddr5"];
-    }
-
-    if (categoriaId === "gaming" && subcategoriaId === "playstation") {
-      if (tipoFinalId === "juegos-playstation") {
-        return ["ps4", "ps5"];
-      }
-      if (tipoFinalId === "controles") {
-        return ["ps4", "ps5"];
-      }
-    }
-
-    if (categoriaId === "gaming" && subcategoriaId === "nintendo") {
-      if (tipoFinalId === "juegos-switch") {
-        return ["switch-1", "switch-2"];
-      }
-      if (tipoFinalId === "controles-switch") {
-        return ["switch-1", "switch-2"];
-      }
-      if (tipoFinalId === "estuche-switch") {
-        return ["switch-1", "switch-2"];
-      }
-      if (tipoFinalId === "accesorios-switch") {
-        return ["switch-1", "switch-2"];
-      }
-    }
-
-    return [];
-  };
-
-  const specificOptionLabel = (option: string) =>
-    option === "mecanico"
-      ? "Mecánico"
-      : option === "membrana"
-      ? "Membrana"
-      : option === "inalambrico"
-      ? "Inalámbrico"
-      : option === "cable"
-      ? "Cable"
-      : option === "ddr4"
-      ? "DDR4"
-      : option === "ddr5"
-      ? "DDR5"
-      : option === "ps4"
-      ? "PS4"
-      : option === "ps5"
-      ? "PS5"
-      : option === "switch-1"
-      ? "Switch 1"
-      : option === "switch-2"
-      ? "Switch 2"
-      : option;
-
-  const specificOptions = useMemo(
-    () => computeSpecificOptions(form.categoria, form.subcategoria, form.tipoFinal),
-    [form.categoria, form.subcategoria, form.tipoFinal]
-  );
-
-  const draftSpecificOptions = useMemo(
-    () =>
-      computeSpecificOptions(extraDraft.categoria, extraDraft.subcategoria, extraDraft.tipoFinal),
-    [extraDraft.categoria, extraDraft.subcategoria, extraDraft.tipoFinal]
-  );
-
   const filteredProducts = useMemo(() => {
     let filtered = allProducts;
 
@@ -430,12 +369,36 @@ const AddProduct = () => {
     setExtraCategorias([]);
     setExtraDraft(emptyExtraDraft);
     setVariantes([]);
+    setAtributos([]);
+    setShowVariantes(false);
+    setShowAtributos(false);
+    setShowExtraCategorias(false);
     setImages([]);
     setEditingProductId(null);
   };
 
+  // Dos asignaciones (la principal del producto, o dos categorías
+  // adicionales) "chocan" solo si coinciden en categoría + subcategoría +
+  // tipo a la vez. La misma categoría (o incluso la misma subcategoría) se
+  // puede repetir mientras el tipo final sea distinto, ej: el producto ya
+  // está en "Instrumento → Cuerda → Guitarra" y también se lo quiere listar
+  // en "Instrumento → Cuerda → Bajo" o en "Instrumento → Viento → Trompeta".
+  type AsignacionCategoria = { categoria: string; subcategoria: string; tipoFinal: string };
+
+  const isSameAsignacion = (a: AsignacionCategoria, b: AsignacionCategoria) =>
+    a.categoria === b.categoria && a.subcategoria === b.subcategoria && a.tipoFinal === b.tipoFinal;
+
   const handleAddExtraCategoria = () => {
     if (!extraDraft.categoria || !extraDraft.subcategoria || !extraDraft.tipoFinal) return;
+
+    const yaEsLaPrincipal = isSameAsignacion(extraDraft, {
+      categoria: form.categoria,
+      subcategoria: form.subcategoria,
+      tipoFinal: form.tipoFinal,
+    });
+    const yaEstaAgregada = extraCategorias.some((extra) => isSameAsignacion(extra, extraDraft));
+
+    if (yaEsLaPrincipal || yaEstaAgregada) return;
 
     setExtraCategorias((prev) => [...prev, extraDraft]);
     setExtraDraft(emptyExtraDraft);
@@ -490,10 +453,10 @@ const AddProduct = () => {
                 categoria: extra.categoria || "",
                 subcategoria: extra.tipos?.[0]?.tipo || "",
                 tipoFinal: extra.tipos?.[1]?.tipo || "",
-                tipoEspecifico: extra.tipos?.[2]?.tipo || "",
               }))
             : [],
           variantes: Array.isArray(product.variantes) ? product.variantes : [],
+          atributos: Array.isArray(product.atributos) ? product.atributos : [],
           available: product.available !== false,
         };
       });
@@ -619,9 +582,21 @@ const AddProduct = () => {
   ) => {
     const { name, value } = e.target;
 
-    if (name === "categoria") {
-      // Una categoría no puede ser a la vez la principal y una adicional.
-      setExtraCategorias((prev) => prev.filter((extra) => extra.categoria !== value));
+    if (name === "tipoFinal") {
+      // Si el nuevo tipo final de la asignación principal termina coincidiendo
+      // exactamente con una categoría adicional ya agregada (misma
+      // categoría + subcategoría + tipo), se quita esa adicional para no
+      // dejar la misma asignación duplicada como principal y como extra.
+      setExtraCategorias((prev) =>
+        prev.filter(
+          (extra) =>
+            !isSameAsignacion(extra, {
+              categoria: form.categoria,
+              subcategoria: form.subcategoria,
+              tipoFinal: value,
+            })
+        )
+      );
     }
 
     setForm((prev) => {
@@ -631,7 +606,6 @@ const AddProduct = () => {
           categoria: value,
           subcategoria: "",
           tipoFinal: "",
-          tipoEspecifico: "",
         };
       }
 
@@ -640,15 +614,6 @@ const AddProduct = () => {
           ...prev,
           subcategoria: value,
           tipoFinal: "",
-          tipoEspecifico: "",
-        };
-      }
-
-      if (name === "tipoFinal") {
-        return {
-          ...prev,
-          tipoFinal: value,
-          tipoEspecifico: "",
         };
       }
 
@@ -768,10 +733,38 @@ const AddProduct = () => {
     setVariantes((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  const handleAddAtributo = () => {
+    if (!form.atributoNombre.trim() || !form.nuevoValorAtributo.trim()) return;
+
+    const exists = atributos.some(
+      (item) =>
+        item.nombre.toLowerCase() === form.atributoNombre.trim().toLowerCase() &&
+        item.valor.toLowerCase() === form.nuevoValorAtributo.trim().toLowerCase()
+    );
+
+    if (exists) return;
+
+    setAtributos((prev) => [
+      ...prev,
+      {
+        nombre: form.atributoNombre.trim(),
+        valor: form.nuevoValorAtributo.trim(),
+      },
+    ]);
+
+    setForm((prev) => ({
+      ...prev,
+      nuevoValorAtributo: "",
+    }));
+  };
+
+  const handleRemoveAtributo = (indexToRemove: number) => {
+    setAtributos((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleEdit = (product: AdminProduct) => {
     const subcategoria = product.tipos?.[0]?.tipo || "";
     const tipoFinal = product.tipos?.[1]?.tipo || "";
-    const tipoEspecifico = product.tipos?.[2]?.tipo || "";
 
     setEditingProductId(product.id);
     setForm({
@@ -781,16 +774,21 @@ const AddProduct = () => {
       categoria: product.categoria || "",
       subcategoria,
       tipoFinal,
-      tipoEspecifico,
       marca: product.marca || "N/A",
       bullets: product.bullets?.join("\n") || "",
       nuevaMarca: "",
       varianteNombre: "",
       nuevoValorVariante: "",
+      atributoNombre: "",
+      nuevoValorAtributo: "",
     });
     setExtraCategorias(product.categoriasExtra || []);
     setExtraDraft(emptyExtraDraft);
     setVariantes(product.variantes || []);
+    setAtributos(product.atributos || []);
+    setShowVariantes(Boolean(product.variantes?.length));
+    setShowAtributos(Boolean(product.atributos?.length));
+    setShowExtraCategorias(Boolean(product.categoriasExtra?.length));
     setImages(
       product.images?.length ? product.images : product.image ? [product.image] : []
     );
@@ -827,7 +825,6 @@ const AddProduct = () => {
     const tiposArray: TipoProducto[] = [
       { tipo: form.subcategoria },
       { tipo: form.tipoFinal },
-      ...(form.tipoEspecifico ? [{ tipo: form.tipoEspecifico }] : []),
     ];
 
     const finalBrand =
@@ -849,12 +846,12 @@ const AddProduct = () => {
       tipos: tiposArray,
       bullets: bulletsArray,
       variantes,
+      atributos,
       categorias_extra: extraCategorias.map((extra) => ({
         categoria: extra.categoria,
         tipos: [
           { tipo: extra.subcategoria },
           { tipo: extra.tipoFinal },
-          ...(extra.tipoEspecifico ? [{ tipo: extra.tipoEspecifico }] : []),
         ],
       })),
     };
@@ -966,6 +963,18 @@ const AddProduct = () => {
             <h2>{editingProductId ? "Editar producto" : "Nuevo producto"}</h2>
 
             <form className="add-product-form" onSubmit={handleSubmit}>
+              <section className="form-section">
+                <div className="form-section-head">
+                  <span className="form-section-icon">
+                    <HiOutlineIdentification />
+                  </span>
+                  <div className="form-section-head-text">
+                    <h3>Información básica</h3>
+                    <p>Lo esencial para identificar y cobrar el producto.</p>
+                  </div>
+                </div>
+
+                <div className="form-section-fields">
               <div className="form-group">
                 <label htmlFor="name">Nombre del producto</label>
                 <input
@@ -994,230 +1003,119 @@ const AddProduct = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="categoria">Categoría</label>
+                <label htmlFor="marca">Marca</label>
                 <select
-                  id="categoria"
-                  name="categoria"
-                  value={form.categoria}
+                  id="marca"
+                  name="marca"
+                  value={form.marca}
                   onChange={handleChange}
                 >
-                  <option value="">Selecciona una categoría</option>
-                  {(categories.length > 0 ? categories : categoryData).map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                  {marcasDisponibles.map((marca) => (
+                    <option key={marca} value={marca}>
+                      {marca}
                     </option>
                   ))}
+                  <option value="__new__">Agregar nueva marca</option>
                 </select>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="subcategoria">Subcategoría / sección</label>
-                <select
-                  id="subcategoria"
-                  name="subcategoria"
-                  value={form.subcategoria}
-                  onChange={handleChange}
-                  disabled={!selectedCategory}
-                >
-                  <option value="">Selecciona una subcategoría</option>
-                  {selectedCategory?.sections.map((section) => (
-                    <option key={section.subcategoria} value={section.subcategoria}>
-                      {section.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="tipoFinal">Tipo específico</label>
-                <select
-                  id="tipoFinal"
-                  name="tipoFinal"
-                  value={form.tipoFinal}
-                  onChange={handleChange}
-                  disabled={!selectedSection}
-                >
-                  <option value="">Selecciona un tipo</option>
-                  {selectedSection?.links.map((link) => (
-                    <option key={link.tipo} value={link.tipo}>
-                      {link.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {specificOptions.length > 0 && (
-                <div className="form-group form-group-full">
-                  <label className="radio-group-label">Subtipo específico</label>
-                  <div className="radio-options-container">
-                    {specificOptions.map((option) => (
-                      <label key={option} className="radio-option-label">
-                        <input
-                          type="radio"
-                          name="tipoEspecifico"
-                          value={option}
-                          checked={form.tipoEspecifico === option}
-                          onChange={handleChange}
-                          className="radio-input"
-                        />
-                        <span className="radio-text">{specificOptionLabel(option)}</span>
-                      </label>
-                    ))}
-                  </div>
+              {form.marca === "__new__" && (
+                <div className="form-group">
+                  <label htmlFor="nuevaMarca">Nueva marca</label>
+                  <input
+                    id="nuevaMarca"
+                    name="nuevaMarca"
+                    type="text"
+                    value={form.nuevaMarca}
+                    onChange={handleChange}
+                    placeholder="Ej: Logitech"
+                  />
                 </div>
               )}
+                </div>
+              </section>
 
-              <div className="form-group form-group-full">
-                <label>
-                  Categorías adicionales{" "}
-                  <span className="optional-text">(opcional)</span>
-                </label>
-                <p className="field-hint">
-                  Ubica este producto también en otra categoría, con su
-                  propia subcategoría y tipo (ej: un headset en "Audio y
-                  Video" y además en "Gaming" → "Accesorios" → "Auriculares").
-                </p>
-
-                {extraCategorias.length > 0 && (
-                  <div className="variant-chips-wrapper">
-                    {extraCategorias.map((extra, index) => (
-                      <button
-                        key={`${extra.categoria}-${index}`}
-                        type="button"
-                        className="variant-chip"
-                        onClick={() => handleRemoveExtraCategoria(index)}
-                        title="Quitar categoría adicional"
-                      >
-                        <span>
-                          {getCategoryLabel(extra.categoria)}
-                          {extra.subcategoria &&
-                            ` → ${getSubcategoryLabel(extra.categoria, extra.subcategoria)}`}
-                          {extra.tipoFinal &&
-                            ` → ${getTypeLabel(extra.categoria, extra.subcategoria, extra.tipoFinal)}`}
-                          {extra.tipoEspecifico && ` (${specificOptionLabel(extra.tipoEspecifico)})`}
-                        </span>
-                        <strong>×</strong>
-                      </button>
-                    ))}
+              <section className="form-section">
+                <div className="form-section-head">
+                  <span className="form-section-icon">
+                    <HiOutlineSquares2X2 />
+                  </span>
+                  <div className="form-section-head-text">
+                    <h3>Categorización</h3>
+                    <p>Dónde va a aparecer este producto en el catálogo.</p>
                   </div>
-                )}
+                </div>
 
-                <div className="extra-categoria-picker">
-                  <div className="form-group">
-                    <label htmlFor="extraCategoria">Categoría</label>
-                    <select
-                      id="extraCategoria"
-                      value={extraDraft.categoria}
-                      onChange={(e) =>
-                        setExtraDraft({
-                          categoria: e.target.value,
-                          subcategoria: "",
-                          tipoFinal: "",
-                          tipoEspecifico: "",
-                        })
-                      }
-                    >
-                      <option value="">Selecciona una categoría</option>
-                      {categoryOptions
-                        .filter(
-                          (category) =>
-                            category.value !== form.categoria &&
-                            !extraCategorias.some((extra) => extra.categoria === category.value)
-                        )
-                        .map((category) => (
-                          <option key={category.value} value={category.value}>
-                            {category.label}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="extraSubcategoria">Subcategoría / sección</label>
-                    <select
-                      id="extraSubcategoria"
-                      value={extraDraft.subcategoria}
-                      onChange={(e) =>
-                        setExtraDraft((prev) => ({
-                          ...prev,
-                          subcategoria: e.target.value,
-                          tipoFinal: "",
-                          tipoEspecifico: "",
-                        }))
-                      }
-                      disabled={!draftCategory}
-                    >
-                      <option value="">Selecciona una subcategoría</option>
-                      {draftCategory?.sections.map((section) => (
-                        <option key={section.subcategoria} value={section.subcategoria}>
-                          {section.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="extraTipoFinal">Tipo específico</label>
-                    <select
-                      id="extraTipoFinal"
-                      value={extraDraft.tipoFinal}
-                      onChange={(e) =>
-                        setExtraDraft((prev) => ({
-                          ...prev,
-                          tipoFinal: e.target.value,
-                          tipoEspecifico: "",
-                        }))
-                      }
-                      disabled={!draftSection}
-                    >
-                      <option value="">Selecciona un tipo</option>
-                      {draftSection?.links.map((link) => (
-                        <option key={link.tipo} value={link.tipo}>
-                          {link.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {draftSpecificOptions.length > 0 && (
-                    <div className="form-group form-group-full">
-                      <label className="radio-group-label">Subtipo específico</label>
-                      <div className="radio-options-container">
-                        {draftSpecificOptions.map((option) => (
-                          <label key={option} className="radio-option-label">
-                            <input
-                              type="radio"
-                              name="extraTipoEspecifico"
-                              value={option}
-                              checked={extraDraft.tipoEspecifico === option}
-                              onChange={(e) =>
-                                setExtraDraft((prev) => ({
-                                  ...prev,
-                                  tipoEspecifico: e.target.value,
-                                }))
-                              }
-                              className="radio-input"
-                            />
-                            <span className="radio-text">{specificOptionLabel(option)}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    className="secondary-btn"
-                    onClick={handleAddExtraCategoria}
-                    disabled={
-                      !extraDraft.categoria || !extraDraft.subcategoria || !extraDraft.tipoFinal
-                    }
+                <div className="form-section-fields">
+              <div className="form-group form-group-full category-fields-row">
+                <div className="form-group">
+                  <label htmlFor="categoria">Categoría</label>
+                  <select
+                    id="categoria"
+                    name="categoria"
+                    value={form.categoria}
+                    onChange={handleChange}
                   >
-                    Agregar categoría
-                  </button>
+                    <option value="">Selecciona una categoría</option>
+                    {(categories.length > 0 ? categories : categoryData).map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="subcategoria">Subcategoría / sección</label>
+                  <select
+                    id="subcategoria"
+                    name="subcategoria"
+                    value={form.subcategoria}
+                    onChange={handleChange}
+                    disabled={!selectedCategory}
+                  >
+                    <option value="">Selecciona una subcategoría</option>
+                    {selectedCategory?.sections.map((section) => (
+                      <option key={section.subcategoria} value={section.subcategoria}>
+                        {section.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="tipoFinal">Tipo específico</label>
+                  <select
+                    id="tipoFinal"
+                    name="tipoFinal"
+                    value={form.tipoFinal}
+                    onChange={handleChange}
+                    disabled={!selectedSection}
+                  >
+                    <option value="">Selecciona un tipo</option>
+                    {selectedSection?.links.map((link) => (
+                      <option key={link.tipo} value={link.tipo}>
+                        {link.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
+                </div>
+              </section>
 
+              <section className="form-section">
+                <div className="form-section-head">
+                  <span className="form-section-icon">
+                    <HiOutlinePhoto />
+                  </span>
+                  <div className="form-section-head-text">
+                    <h3>Imágenes</h3>
+                    <p>La primera imagen que subas es la portada.</p>
+                  </div>
+                </div>
+
+                <div className="form-section-fields">
               <div className="form-group form-group-full" onPaste={handleImagePaste}>
                 <label>Imágenes del producto</label>
 
@@ -1310,38 +1208,21 @@ const AddProduct = () => {
                   </>
                 )}
               </div>
-
-              <div className="form-group">
-                <label htmlFor="marca">Marca</label>
-                <select
-                  id="marca"
-                  name="marca"
-                  value={form.marca}
-                  onChange={handleChange}
-                >
-                  {marcasDisponibles.map((marca) => (
-                    <option key={marca} value={marca}>
-                      {marca}
-                    </option>
-                  ))}
-                  <option value="__new__">Agregar nueva marca</option>
-                </select>
-              </div>
-
-              {form.marca === "__new__" && (
-                <div className="form-group">
-                  <label htmlFor="nuevaMarca">Nueva marca</label>
-                  <input
-                    id="nuevaMarca"
-                    name="nuevaMarca"
-                    type="text"
-                    value={form.nuevaMarca}
-                    onChange={handleChange}
-                    placeholder="Ej: Logitech"
-                  />
                 </div>
-              )}
+              </section>
 
+              <section className="form-section">
+                <div className="form-section-head">
+                  <span className="form-section-icon">
+                    <HiOutlineDocumentText />
+                  </span>
+                  <div className="form-section-head-text">
+                    <h3>Descripción</h3>
+                    <p>Lo que va a leer el cliente en la ficha del producto.</p>
+                  </div>
+                </div>
+
+                <div className="form-section-fields">
               <div className="form-group form-group-full">
                 <label htmlFor="description">Descripción</label>
                 <textarea
@@ -1370,9 +1251,217 @@ const AddProduct = () => {
                   separada.
                 </p>
               </div>
+                </div>
+              </section>
 
+              <section className="form-section">
+                <div className="form-section-head">
+                  <span className="form-section-icon">
+                    <HiOutlineSparkles />
+                  </span>
+                  <div className="form-section-head-text">
+                    <h3>Opciones adicionales</h3>
+                    <p>Nada de esto es obligatorio — agregalo solo si tu producto lo necesita.</p>
+                  </div>
+                </div>
+
+                <div className="form-section-fields">
+
+              {(!showExtraCategorias || !showVariantes || !showAtributos) && (
+                <div className="form-group form-group-full optional-toggles-row">
+                  {!showExtraCategorias && (
+                    <button
+                      type="button"
+                      className="optional-toggle-tile"
+                      onClick={() => setShowExtraCategorias(true)}
+                    >
+                      <span className="optional-toggle-tile-icon">
+                        <HiOutlineFolderPlus />
+                      </span>
+                      <span>Otra categoría</span>
+                    </button>
+                  )}
+
+                  {!showVariantes && (
+                    <button
+                      type="button"
+                      className="optional-toggle-tile"
+                      onClick={() => setShowVariantes(true)}
+                    >
+                      <span className="optional-toggle-tile-icon">
+                        <HiOutlineSwatch />
+                      </span>
+                      <span>Variantes opcionales</span>
+                    </button>
+                  )}
+
+                  {!showAtributos && (
+                    <button
+                      type="button"
+                      className="optional-toggle-tile"
+                      onClick={() => setShowAtributos(true)}
+                    >
+                      <span className="optional-toggle-tile-icon">
+                        <HiOutlineFunnel />
+                      </span>
+                      <span>Atributos filtrables</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {showExtraCategorias && (
               <div className="variant-box">
-                <h3>Variantes opcionales</h3>
+                <div className="variant-box-header">
+                  <h3>Categorías adicionales</h3>
+                  <button
+                    type="button"
+                    className="variant-box-close"
+                    onClick={() => setShowExtraCategorias(false)}
+                    title="Ocultar sección (lo ya agregado no se pierde)"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+                <p className="field-hint">
+                  Ubica este producto también en otra categoría, con su
+                  propia subcategoría y tipo (ej: un headset en "Audio y
+                  Video" y además en "Gaming" → "Accesorios" → "Auriculares").
+                </p>
+
+                {extraCategorias.length > 0 && (
+                  <div className="variant-chips-wrapper">
+                    {extraCategorias.map((extra, index) => (
+                      <button
+                        key={`${extra.categoria}-${index}`}
+                        type="button"
+                        className="variant-chip"
+                        onClick={() => handleRemoveExtraCategoria(index)}
+                        title="Quitar categoría adicional"
+                      >
+                        <span>
+                          {getCategoryLabel(extra.categoria)}
+                          {extra.subcategoria &&
+                            ` → ${getSubcategoryLabel(extra.categoria, extra.subcategoria)}`}
+                          {extra.tipoFinal &&
+                            ` → ${getTypeLabel(extra.categoria, extra.subcategoria, extra.tipoFinal)}`}
+                        </span>
+                        <strong>×</strong>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="extra-categoria-picker">
+                  <div className="form-group">
+                    <label htmlFor="extraCategoria">Categoría</label>
+                    <select
+                      id="extraCategoria"
+                      value={extraDraft.categoria}
+                      onChange={(e) =>
+                        setExtraDraft({
+                          categoria: e.target.value,
+                          subcategoria: "",
+                          tipoFinal: "",
+                        })
+                      }
+                    >
+                      <option value="">Selecciona una categoría</option>
+                      {categoryOptions.map((category) => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="extraSubcategoria">Subcategoría / sección</label>
+                    <select
+                      id="extraSubcategoria"
+                      value={extraDraft.subcategoria}
+                      onChange={(e) =>
+                        setExtraDraft((prev) => ({
+                          ...prev,
+                          subcategoria: e.target.value,
+                          tipoFinal: "",
+                        }))
+                      }
+                      disabled={!draftCategory}
+                    >
+                      <option value="">Selecciona una subcategoría</option>
+                      {draftCategory?.sections.map((section) => (
+                        <option key={section.subcategoria} value={section.subcategoria}>
+                          {section.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="extraTipoFinal">Tipo específico</label>
+                    <select
+                      id="extraTipoFinal"
+                      value={extraDraft.tipoFinal}
+                      onChange={(e) =>
+                        setExtraDraft((prev) => ({
+                          ...prev,
+                          tipoFinal: e.target.value,
+                        }))
+                      }
+                      disabled={!draftSection}
+                    >
+                      <option value="">Selecciona un tipo</option>
+                      {draftSection?.links
+                        .filter(
+                          (link) =>
+                            !isSameAsignacion(
+                              { categoria: extraDraft.categoria, subcategoria: extraDraft.subcategoria, tipoFinal: link.tipo || "" },
+                              { categoria: form.categoria, subcategoria: form.subcategoria, tipoFinal: form.tipoFinal }
+                            ) &&
+                            !extraCategorias.some((extra) =>
+                              isSameAsignacion(extra, {
+                                categoria: extraDraft.categoria,
+                                subcategoria: extraDraft.subcategoria,
+                                tipoFinal: link.tipo || "",
+                              })
+                            )
+                        )
+                        .map((link) => (
+                          <option key={link.tipo} value={link.tipo}>
+                            {link.label}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={handleAddExtraCategoria}
+                    disabled={
+                      !extraDraft.categoria || !extraDraft.subcategoria || !extraDraft.tipoFinal
+                    }
+                  >
+                    Agregar categoría
+                  </button>
+                </div>
+              </div>
+              )}
+
+              {showVariantes && (
+              <div className="variant-box">
+                <div className="variant-box-header">
+                  <h3>Variantes opcionales</h3>
+                  <button
+                    type="button"
+                    className="variant-box-close"
+                    onClick={() => setShowVariantes(false)}
+                    title="Ocultar sección (lo ya agregado no se pierde)"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
                 <p>
                   Agrega las opciones del producto (medidas, colores, tallas,
                   capacidades). Para un cable, por ejemplo, basta con el
@@ -1434,6 +1523,89 @@ const AddProduct = () => {
                   </div>
                 )}
               </div>
+              )}
+
+              {showAtributos && (
+              <div className="variant-box">
+                <div className="variant-box-header">
+                  <h3>Atributos filtrables</h3>
+                  <button
+                    type="button"
+                    className="variant-box-close"
+                    onClick={() => setShowAtributos(false)}
+                    title="Ocultar sección (lo ya agregado no se pierde)"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+                <p>
+                  Agrega características por las que se pueda filtrar en el
+                  catálogo (ej: "Conexión" → "USB", "Bluetooth"). A diferencia
+                  de las variantes, esto no es una opción de compra — es
+                  información para que el cliente filtre productos.
+                </p>
+
+                <div className="variant-inline">
+                  <div className="form-group">
+                    <label htmlFor="atributoNombre">Nombre del atributo</label>
+                    <input
+                      id="atributoNombre"
+                      name="atributoNombre"
+                      type="text"
+                      value={form.atributoNombre}
+                      onChange={handleChange}
+                      placeholder="Ej: Conexión"
+                    />
+                  </div>
+
+                  <div className="form-group variant-value-group">
+                    <label htmlFor="nuevoValorAtributo">Valor</label>
+                    <input
+                      id="nuevoValorAtributo"
+                      name="nuevoValorAtributo"
+                      type="text"
+                      value={form.nuevoValorAtributo}
+                      onChange={handleChange}
+                      placeholder="Ej: USB, Inalámbrico, Bluetooth"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className="add-variant-btn"
+                    onClick={handleAddAtributo}
+                  >
+                    Agregar
+                  </button>
+                </div>
+
+                <p className="field-hint">
+                  Para un producto con varias conexiones (ej: USB y
+                  Bluetooth), agregalas una por una con el mismo nombre de
+                  atributo.
+                </p>
+
+                {atributos.length > 0 && (
+                  <div className="variant-chips-wrapper">
+                    {atributos.map((atributo, index) => (
+                      <button
+                        key={`${atributo.nombre}-${atributo.valor}-${index}`}
+                        type="button"
+                        className="variant-chip"
+                        onClick={() => handleRemoveAtributo(index)}
+                        title="Eliminar atributo"
+                      >
+                        <span>{`${atributo.nombre}: ${atributo.valor}`}</span>
+                        <strong>×</strong>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              )}
+
+                </div>
+              </section>
 
               <button type="submit" className="primary-btn" disabled={saving || uploadingImage}>
                 {uploadingImage
@@ -1617,6 +1789,16 @@ const AddProduct = () => {
                             {product.variantes.map((variante, index) => (
                               <span key={`${product.id}-var-${index}`}>
                                 {variante.nombre ? `${variante.nombre}: ${variante.valor}` : variante.valor}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {product.atributos && product.atributos.length > 0 && (
+                          <div className="admin-variants">
+                            {product.atributos.map((atributo, index) => (
+                              <span key={`${product.id}-attr-${index}`}>
+                                {atributo.nombre}: {atributo.valor}
                               </span>
                             ))}
                           </div>

@@ -3,11 +3,11 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
 import categoryService from "../../services/categoryService";
-import type { 
-  CategoriaCreate, 
-  CategoriaUpdate 
+import type {
+  CategoriaCreate,
+  CategoriaUpdate
 } from "../../services/categoryService";
-import { categoryData, getCategoryData, clearCategoryCache } from "../../data/categoryData";
+import { categoryData, getCategoryData, clearCategoryCache, getCategoryIcon } from "../../data/categoryData";
 
 type CategoryLink = {
   label: string;
@@ -32,6 +32,7 @@ type CategorySection = {
 type CategoryItem = {
   id: string;
   name: string;
+  icono?: string;
   sections: CategorySection[];
   _id?: string;
 };
@@ -67,6 +68,7 @@ const CategoryManager = () => {
         const formattedCategories = categoriesData.map((category) => ({
           id: category.id,
           name: category.name,
+          icono: category.icono,
           _id: category._id,
           sections: category.sections.map((section, sectionIndex) => ({
             title: section.title,
@@ -99,6 +101,7 @@ const CategoryManager = () => {
         const fallbackCategories = categoryData.map((category) => ({
           id: category.id,
           name: category.name,
+          icono: category.icono,
           sections: category.sections.map((section, sectionIndex) => ({
             title: section.title,
             to: section.to,
@@ -136,7 +139,7 @@ const CategoryManager = () => {
   const [subcategoryFilter, setSubcategoryFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
-  const [newCategory, setNewCategory] = useState({ name: "", id: "" });
+  const [newCategory, setNewCategory] = useState({ name: "", id: "", icono: "" });
   const [newSection, setNewSection] = useState({
     title: "",
     subcategoria: "",
@@ -231,7 +234,7 @@ const CategoryManager = () => {
     setEditingCategory(null);
     setEditingSection(null);
     setEditingLink(null);
-    setNewCategory({ name: "", id: "" });
+    setNewCategory({ name: "", id: "", icono: "" });
     setNewSection({ title: "", subcategoria: "", categoryId: "" });
     setNewLink({ label: "", tipo: "", sectionId: "", categoryId: "" });
   };
@@ -245,6 +248,7 @@ const CategoryManager = () => {
       const formattedCategories = freshData.map((cat) => ({
         id: cat.id,
         name: cat.name,
+        icono: cat.icono,
         _id: cat._id,
         sections: cat.sections.map((section) => ({
           ...section,
@@ -279,6 +283,7 @@ const CategoryManager = () => {
     const categoryPayload: CategoriaCreate = {
       categoria: normalizedId,
       nombre_categoria: newCategory.name.trim(),
+      icono: newCategory.icono.trim() || undefined,
     };
 
     try {
@@ -286,6 +291,7 @@ const CategoryManager = () => {
         const updatePayload: CategoriaUpdate = {
           categoria: normalizedId,
           nombre_categoria: newCategory.name.trim(),
+          icono: newCategory.icono.trim() || null,
         };
 
         await categoryService.updateCategory(editingCategory, updatePayload);
@@ -298,6 +304,7 @@ const CategoryManager = () => {
         const formattedCategories = freshData.map((cat) => ({
           id: cat.id,
           name: cat.name,
+          icono: cat.icono,
           sections: cat.sections.map((section) => ({
             ...section,
             links: section.links.map((link) => ({ ...link })),
@@ -327,6 +334,7 @@ const CategoryManager = () => {
         const formattedCategories = freshData.map((cat) => ({
           id: cat.id,
           name: cat.name,
+          icono: cat.icono,
           sections: cat.sections.map((section) => ({
             ...section,
             links: section.links.map((link) => ({ ...link })),
@@ -577,6 +585,17 @@ const CategoryManager = () => {
                   }
                   className="form-input"
                 />
+                <input
+                  type="text"
+                  placeholder="Emoji (opcional, ej: 🖥️)"
+                  title="Se usa como ícono de esta categoría. Si lo dejás vacío, se elige uno automático según el nombre."
+                  value={newCategory.icono}
+                  onChange={(e) =>
+                    setNewCategory({ ...newCategory, icono: e.target.value })
+                  }
+                  className="form-input"
+                  maxLength={8}
+                />
                 <button type="button" onClick={saveCategory} className="primary-btn">
                   {editingCategory ? <FaSave /> : <FaPlus />}
                   {editingCategory ? "Actualizar" : "Agregar"}
@@ -679,7 +698,12 @@ const CategoryManager = () => {
               <div key={category._id || category.id} className="category-section">
                 <div className="category-header">
                   <div>
-                    <h3>{category.name}</h3>
+                    <h3>
+                      <span className="category-icon-preview" aria-hidden="true">
+                        {getCategoryIcon(category.name, category.id, category.icono)}
+                      </span>
+                      {category.name}
+                    </h3>
                     <p>{category.id}</p>
                   </div>
 
@@ -690,7 +714,11 @@ const CategoryManager = () => {
                       onClick={() => {
                         const categoryId = category._id || category.id;
                         setEditingCategory(categoryId);
-                        setNewCategory({ name: category.name, id: category.id });
+                        setNewCategory({
+                          name: category.name,
+                          id: category.id,
+                          icono: category.icono || "",
+                        });
                         setEditingSection(null);
                         setEditingLink(null);
                       }}

@@ -1,11 +1,13 @@
 import "./Home.css";
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   HiOutlineTruck,
   HiOutlineShieldCheck,
   HiOutlineCreditCard,
   HiOutlineChatBubbleLeftRight,
+  HiChevronLeft,
+  HiChevronRight,
 } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
@@ -17,6 +19,11 @@ type ProductType = {
   tipo: string;
 };
 
+type ProductCategoriaExtra = {
+  categoria: string;
+  tipos: ProductType[];
+};
+
 type Product = {
   id: string;
   nombre: string;
@@ -26,6 +33,7 @@ type Product = {
   categoria: string;
   marca: string;
   tipos: ProductType[];
+  categorias_extra: ProductCategoriaExtra[];
   stock: number;
   image?: string;
   available?: boolean;
@@ -134,6 +142,22 @@ const ProductCard = memo(({ product, onAddToCart, onNavigate }: {
   );
 });
 
+const CarouselArrow = memo(({ direction, onClick, disabled }: {
+  direction: "left" | "right";
+  onClick: () => void;
+  disabled: boolean;
+}) => (
+  <button
+    type="button"
+    className={`carousel-arrow carousel-arrow-${direction}`}
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={direction === "left" ? "Productos anteriores" : "Siguientes productos"}
+  >
+    {direction === "left" ? <HiChevronLeft /> : <HiChevronRight />}
+  </button>
+));
+
 const ProductCardSkeleton = () => (
   <div className="product-card product-card-skeleton" aria-hidden="true">
     <div className="skeleton-block skeleton-media" />
@@ -150,17 +174,30 @@ const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
 
-        const response = await productService.getProducts({
-          page: 1,
-          limit: 10,
-        });
+        // Se trae el catálogo completo (paginado) en vez de solo los últimos
+        // 10, porque el carrusel necesita ver todas las categorías y
+        // subcategorías disponibles para poder mostrar al menos un producto
+        // de cada una.
+        const PAGE_SIZE = 100;
+        let page = 1;
+        let rawProducts: any[] = [];
 
-        const rawProducts = response.data;
+        while (true) {
+          const response = await productService.getProducts({ page, limit: PAGE_SIZE });
+          rawProducts = rawProducts.concat(response.data);
+
+          if (!response.hasMore) break;
+          page += 1;
+        }
 
         const formattedProducts: Product[] = rawProducts.map((product: any) => ({
           id: String(product.id || product._id || ""),
@@ -174,6 +211,7 @@ const Home = () => {
           categoria: product.categoria || "",
           marca: product.marca || "",
           tipos: Array.isArray(product.tipos) ? product.tipos : [],
+          categorias_extra: Array.isArray(product.categorias_extra) ? product.categorias_extra : [],
           stock: Number(product.stock ?? 0),
           image: product.image || "/placeholder-product.png",
           available: product.available !== false,
@@ -190,6 +228,124 @@ const Home = () => {
 
     fetchProducts();
   }, []);
+
+  // Cantidad objetivo de tarjetas en el carrusel de destacados. Si el
+  // catálogo tiene menos productos que esto, el carrusel simplemente muestra
+  // todos los que haya.
+  const FEATURED_TARGET_COUNT = 10;
+
+  // Productos del carrusel de destacados: al menos uno de cada "sección"
+  // (categoría + subcategoría + tipo) del catálogo, y si con eso no se llega
+  // a FEATURED_TARGET_COUNT, se suman más productos (dos o más por sección)
+  // hasta completarlo o quedarse sin productos distintos. Un producto puede
+  // pertenecer a varias secciones a la vez si además está listado en
+  // categorías adicionales (`categorias_extra`).
+  const featuredProducts = useMemo(() => {
+    const buckets = new Map<string, Product[]>();
+
+    const addToBucket = (categoria: string, subcategoria: string, tipo: string, product: Product) => {
+      if (!categoria) return;
+      const key = `${categoria}::${subcategoria || "general"}::${tipo || "general"}`;
+      const bucket = buckets.get(key);
+      if (bucket) {
+        if (!bucket.some((p) => p.id === product.id)) bucket.push(product);
+      } else {
+        buckets.set(key, [product]);
+      }
+    };
+
+    products.forEach((product) => {
+      addToBucket(product.categoria, product.tipos[0]?.tipo || "", product.tipos[1]?.tipo || "", product);
+      product.categorias_extra.forEach((extra) => {
+        addToBucket(extra.categoria, extra.tipos?.[0]?.tipo || "", extra.tipos?.[1]?.tipo || "", product);
+      });
+    });
+
+    const sectionKeys = Array.from(buckets.keys()).sort((a, b) => a.localeCompare(b));
+
+    const selected: Product[] = [];
+    const selectedIds = new Set<string>();
+
+    const takeNextFrom = (key: string): boolean => {
+      const bucket = buckets.get(key)!;
+      const next = bucket.find((p) => !selectedIds.has(p.id));
+      if (!next) return false;
+      selected.push(next);
+      selectedIds.add(next.id);
+      return true;
+    };
+
+    // Primera pasada: un producto de cada sección.
+    sectionKeys.forEach((key) => takeNextFrom(key));
+
+    // Si faltan productos para llegar al objetivo, se hacen rondas
+    // adicionales tomando el siguiente producto disponible de cada sección
+    // (dos o más por sección, si esa sección tiene stock de sobra) hasta
+    // completar el objetivo o agotar productos distintos.
+    let addedInLastPass = true;
+    while (selected.length < FEATURED_TARGET_COUNT && addedInLastPass) {
+      addedInLastPass = false;
+      for (const key of sectionKeys) {
+        if (selected.length >= FEATURED_TARGET_COUNT) break;
+        if (takeNextFrom(key)) addedInLastPass = true;
+      }
+    }
+
+    return selected;
+  }, [products]);
+
+  const updateCarouselScrollState = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateCarouselScrollState();
+  }, [featuredProducts, updateCarouselScrollState]);
+
+  const handleCarouselScroll = useCallback((direction: "left" | "right") => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.85;
+    el.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
+  }, []);
+
+  // Auto-avance del carrusel: cada pocos segundos avanza solo una "página",
+  // y al llegar al final vuelve al inicio en vez de quedarse trabado ahí.
+  // Se pausa mientras el usuario interactúa (mouse encima o toque) para no
+  // pelearle el scroll a alguien que está mirando un producto, y respeta la
+  // preferencia de "reducir movimiento" del sistema para accesibilidad.
+  const AUTOPLAY_INTERVAL_MS = 4500;
+  const isInteractingRef = useRef(false);
+
+  const pauseAutoplay = useCallback(() => {
+    isInteractingRef.current = true;
+  }, []);
+
+  const resumeAutoplay = useCallback(() => {
+    isInteractingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (!el || featuredProducts.length === 0) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const id = window.setInterval(() => {
+      if (isInteractingRef.current) return;
+
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      if (atEnd) {
+        el.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        el.scrollBy({ left: el.clientWidth * 0.85, behavior: "smooth" });
+      }
+    }, AUTOPLAY_INTERVAL_MS);
+
+    return () => window.clearInterval(id);
+  }, [featuredProducts]);
 
   const handleAddToCart = useCallback((product: Product) => {
     addToCart({
@@ -252,23 +408,47 @@ const Home = () => {
         <h2 className="section-title">Productos destacados</h2>
 
         {loading ? (
-          <div className="products-grid">
+          <div className="products-carousel">
             {Array.from({ length: 5 }).map((_, index) => (
               <ProductCardSkeleton key={index} />
             ))}
           </div>
-        ) : products.length === 0 ? (
+        ) : featuredProducts.length === 0 ? (
           <p className="empty-state-text">No hay productos disponibles.</p>
         ) : (
-          <div className="products-grid">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                onNavigate={handleNavigate}
-              />
-            ))}
+          <div
+            className="products-carousel-wrapper"
+            onMouseEnter={pauseAutoplay}
+            onMouseLeave={resumeAutoplay}
+            onTouchStart={pauseAutoplay}
+            onTouchEnd={resumeAutoplay}
+          >
+            <CarouselArrow
+              direction="left"
+              onClick={() => handleCarouselScroll("left")}
+              disabled={!canScrollLeft}
+            />
+
+            <div
+              className="products-carousel"
+              ref={carouselRef}
+              onScroll={updateCarouselScrollState}
+            >
+              {featuredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onNavigate={handleNavigate}
+                />
+              ))}
+            </div>
+
+            <CarouselArrow
+              direction="right"
+              onClick={() => handleCarouselScroll("right")}
+              disabled={!canScrollRight}
+            />
           </div>
         )}
       </section>
