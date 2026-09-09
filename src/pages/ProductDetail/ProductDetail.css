@@ -22,6 +22,12 @@
   padding: 2rem 1.5rem 4rem;
 }
 
+.pd-breadcrumb {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
 .pd-hero {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -46,9 +52,12 @@
   border-radius: var(--radius-pill);
 }
 
+/* Fondo blanco puro (no el --bg-base grisáceo del resto del sitio): así,
+   si la foto del producto ya viene recortada sobre blanco, se funde con el
+   contenedor en vez de mostrar un borde/tinte visible alrededor. */
 .pd-imageWrap {
   position: relative;
-  background: var(--bg-base);
+  background: #ffffff;
   border-radius: var(--radius-md);
   min-height: 360px;
   display: grid;
@@ -58,21 +67,17 @@
   border: 1px solid var(--border-subtle);
 }
 
-.pd-imageWrap::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 30% 20%, rgba(34, 211, 238, 0.14), transparent 60%);
-  pointer-events: none;
-}
-
 .pd-image {
   position: relative;
   width: 100%;
   max-height: 380px;
   object-fit: contain;
   display: block;
-  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
+  transition: transform 0.35s ease;
+}
+
+.pd-imageWrap:hover .pd-image {
+  transform: scale(1.04);
 }
 
 .pd-thumbnails {
@@ -88,7 +93,7 @@
   padding: 0.3rem;
   border: 1.5px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  background: var(--bg-base);
+  background: #ffffff;
   cursor: pointer;
   flex-shrink: 0;
   transition: border-color 0.15s ease, opacity 0.15s ease;
@@ -124,10 +129,50 @@
   color: var(--text-primary);
 }
 
-.pd-brand {
+.pd-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
   margin-bottom: 0.6rem;
+}
+
+.pd-brand {
+  margin: 0;
   color: var(--text-muted);
   font-size: 0.92rem;
+}
+
+.pd-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.pd-stock::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pd-stock--ok {
+  color: var(--success);
+}
+
+.pd-stock--ok::before {
+  background: var(--success);
+}
+
+.pd-stock--low {
+  color: var(--warning);
+}
+
+.pd-stock--low::before {
+  background: var(--warning);
 }
 
 .pd-unavailable-badge {
@@ -272,7 +317,8 @@
   aspect-ratio: 1 / 1;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  background: var(--bg-base);
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
   display: grid;
   place-items: center;
 }
@@ -369,11 +415,20 @@
   color: #ffffff;
 }
 
-/* ===== BUY BOX ===== */
-.pd-price-block {
+/* ===== BUY BOX =====
+   Tarjeta propia y destacada para precio + CTA, en vez de vivir suelta en
+   la columna derecha — es la zona donde más importa que el ojo se detenga
+   (patrón estándar de "buy box" en ecommerce). */
+.pd-buybox {
   margin-top: auto;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-subtle);
+  padding: 1.25rem;
+  background: var(--accent-soft);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+}
+
+.pd-price-block {
+  margin-bottom: 1rem;
 }
 
 .pd-price {
@@ -396,7 +451,7 @@
 
 .pd-price-note {
   display: block;
-  margin: 0.15rem 0 1rem;
+  margin: 0.15rem 0 0;
   color: var(--text-faint);
   font-size: 0.78rem;
   font-weight: 600;
@@ -405,6 +460,7 @@
 }
 
 .pd-btn {
+  width: 100%;
   border: none;
   border-radius: var(--radius-pill);
   padding: 0.95rem 1.4rem;
@@ -419,6 +475,66 @@
 
 .pd-btn:hover:not(:disabled) {
   transform: translateY(-2px);
+}
+
+.pd-trust-mini {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--border-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pd-trust-mini li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.pd-trust-mini-icon {
+  display: inline-flex;
+  color: var(--accent);
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+/* ===== ESPECIFICACIONES (atributos) ===== */
+.pd-section-title--spaced {
+  margin-top: 1.75rem;
+}
+
+.pd-specs-grid {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pd-specs-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.4fr) 1fr;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.92rem;
+}
+
+.pd-specs-row:last-child {
+  border-bottom: none;
+}
+
+.pd-specs-row dt {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.pd-specs-row dd {
+  margin: 0;
+  color: var(--text-primary);
 }
 
 .pd-btn:disabled {

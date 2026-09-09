@@ -296,7 +296,11 @@
   height: 190px;
   object-fit: contain;
   border-radius: var(--radius-sm);
-  background: var(--bg-base);
+  /* Blanco puro, no el gris de --bg-base: si la foto del producto ya viene
+     recortada sobre blanco, se funde con el contenedor en vez de mostrar
+     un recuadro gris alrededor. */
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
   margin-bottom: 14px;
   padding: 8px;
 }

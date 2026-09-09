@@ -1,6 +1,11 @@
 import { Link, useParams, useLocation } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  HiOutlineTruck,
+  HiOutlineShieldCheck,
+  HiOutlineCreditCard,
+} from "react-icons/hi2";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
 import { formatPrice } from "../../utils/format";
 import "./ProductDetail.css";
@@ -13,6 +18,11 @@ type VarianteProducto = {
   nombre: string;
   valor: string;
   precio_adicional?: number;
+};
+
+type AtributoProducto = {
+  nombre: string;
+  valor: string;
 };
 
 type Product = {
@@ -28,8 +38,19 @@ type Product = {
   images: string[];
   bullets: string[];
   variantes: VarianteProducto[];
+  atributos: AtributoProducto[];
+  stock: number;
   available?: boolean;
 };
+
+// Señales de confianza cortas, mismas que en el home, para reforzar la
+// decisión de compra justo al lado del botón de agregar al carrito — es el
+// lugar donde más importan (ahí es donde la gente duda).
+const TRUST_MINI = [
+  { icon: <HiOutlineTruck />, text: "Envío rápido en Puntarenas y alrededores" },
+  { icon: <HiOutlineShieldCheck />, text: "Garantía real con soporte directo" },
+  { icon: <HiOutlineCreditCard />, text: "Pagás con SINPE o transferencia" },
+];
 
 type SimilarProduct = {
   id: string;
@@ -164,6 +185,8 @@ const ProductDetail = () => {
           images: galleryImages,
           bullets: productData.bullets || [],
           variantes: productData.variantes || [],
+          atributos: productData.atributos || [],
+          stock: Number(productData.stock ?? 0),
           available: productData.available !== false,
         });
         setActiveImageIndex(0);
@@ -227,6 +250,22 @@ const ProductDetail = () => {
     };
   }, [product?.categoria, product?.id]);
 
+  // Atributos agrupados por nombre (ej: { "Conexión": ["USB", "Bluetooth"] })
+  // para mostrarlos como ficha técnica — un producto puede tener varios
+  // valores del mismo atributo a la vez, igual que en los filtros del
+  // catálogo.
+  const groupedAtributos = useMemo(() => {
+    const grouped: Record<string, string[]> = {};
+
+    (product?.atributos || []).forEach(({ nombre, valor }) => {
+      if (!nombre || !valor) return;
+      if (!grouped[nombre]) grouped[nombre] = [];
+      if (!grouped[nombre].includes(valor)) grouped[nombre].push(valor);
+    });
+
+    return Object.entries(grouped);
+  }, [product?.atributos]);
+
   if (loading) {
     return (
       <div className="pd-status-page">
@@ -254,9 +293,17 @@ const ProductDetail = () => {
     ? Math.round(((product.precio - precioBase) / product.precio) * 100)
     : 0;
 
+  const lowStock = isAvailable && product.stock > 0 && product.stock <= 5;
+
   return (
     <div className="pd-page">
       <div className="pd-container">
+        <p className="pd-breadcrumb">
+          Inicio
+          {product.categoria && ` / ${formatTagLabel(product.categoria)}`}
+          {product.tipos?.[0] && ` / ${formatTagLabel(product.tipos[0].tipo)}`}
+        </p>
+
         <section className="pd-hero">
           <div className="pd-left">
             <div className="pd-imageWrap">
@@ -302,7 +349,15 @@ const ProductDetail = () => {
           <div className="pd-right">
             <h1 className="pd-title">{product.nombre}</h1>
 
-            <p className="pd-brand">Marca: {product.marca}</p>
+            <div className="pd-meta-row">
+              <p className="pd-brand">Marca: {product.marca}</p>
+
+              {isAvailable && (
+                <span className={`pd-stock ${lowStock ? "pd-stock--low" : "pd-stock--ok"}`}>
+                  {lowStock ? `¡Últimas ${product.stock} unidades!` : "En stock"}
+                </span>
+              )}
+            </div>
 
             {product.tipos?.length > 0 && (
               <div className="pd-tags">
@@ -387,41 +442,52 @@ const ProductDetail = () => {
               </div>
             )}
 
-            <div className="pd-price-block">
-              {onSale && (
-                <div className="pd-price-old">
-                  {formatPrice(precioOriginalFinal)}
+            <div className="pd-buybox">
+              <div className="pd-price-block">
+                {onSale && (
+                  <div className="pd-price-old">
+                    {formatPrice(precioOriginalFinal)}
+                  </div>
+                )}
+                <div className="pd-price">
+                  {formatPrice(precioFinal)}
                 </div>
-              )}
-              <div className="pd-price">
-                {formatPrice(precioFinal)}
+                <span className="pd-price-note">
+                  IVA incluido
+                  {onSale && ` · Ahorrás ${formatPrice(precioOriginalFinal - precioFinal)}`}
+                </span>
               </div>
-              <span className="pd-price-note">
-                IVA incluido
-                {onSale && ` · Ahorrás ${formatPrice(precioOriginalFinal - precioFinal)}`}
-              </span>
-            </div>
 
-            <button
-              className="pd-btn"
-              disabled={!isAvailable}
-              onClick={() => {
-                if (!isAvailable) return;
-                addToCart({
-                  id: product.id,
-                  name: product.nombre,
-                  price: precioFinal,
-                  image: product.image || "/placeholder-product.png",
-                  variant: varianteSeleccionada
-                    ? varianteSeleccionada.nombre
-                      ? `${varianteSeleccionada.nombre}: ${varianteSeleccionada.valor}`
-                      : varianteSeleccionada.valor
-                    : undefined,
-                });
-              }}
-            >
-              {isAvailable ? "Agregar al carrito" : "No disponible"}
-            </button>
+              <button
+                className="pd-btn"
+                disabled={!isAvailable}
+                onClick={() => {
+                  if (!isAvailable) return;
+                  addToCart({
+                    id: product.id,
+                    name: product.nombre,
+                    price: precioFinal,
+                    image: product.image || "/placeholder-product.png",
+                    variant: varianteSeleccionada
+                      ? varianteSeleccionada.nombre
+                        ? `${varianteSeleccionada.nombre}: ${varianteSeleccionada.valor}`
+                        : varianteSeleccionada.valor
+                      : undefined,
+                  });
+                }}
+              >
+                {isAvailable ? "Agregar al carrito" : "No disponible"}
+              </button>
+
+              <ul className="pd-trust-mini">
+                {TRUST_MINI.map((item) => (
+                  <li key={item.text}>
+                    <span className="pd-trust-mini-icon">{item.icon}</span>
+                    {item.text}
+                  </li>
+                ))}
+              </ul>
+            </div>
 
             <div className="pd-back">
               <Link to={getBackUrl()}>← Volver</Link>
@@ -429,12 +495,32 @@ const ProductDetail = () => {
           </div>
         </section>
 
-        {product.descripcion && (
+        {(product.descripcion || groupedAtributos.length > 0) && (
           <section className="pd-description-card">
-            <h2 className="pd-section-title">Descripción</h2>
-            <p className="pd-desc">
-              {formatTextWithLineBreaks(product.descripcion)}
-            </p>
+            {product.descripcion && (
+              <>
+                <h2 className="pd-section-title">Descripción</h2>
+                <p className="pd-desc">
+                  {formatTextWithLineBreaks(product.descripcion)}
+                </p>
+              </>
+            )}
+
+            {groupedAtributos.length > 0 && (
+              <>
+                <h2 className={`pd-section-title ${product.descripcion ? "pd-section-title--spaced" : ""}`}>
+                  Especificaciones
+                </h2>
+                <dl className="pd-specs-grid">
+                  {groupedAtributos.map(([nombre, valores]) => (
+                    <div className="pd-specs-row" key={nombre}>
+                      <dt>{nombre}</dt>
+                      <dd>{valores.join(", ")}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
+            )}
           </section>
         )}
 

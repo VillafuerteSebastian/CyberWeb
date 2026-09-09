@@ -71,7 +71,10 @@
   object-fit: cover;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
-  background: var(--bg-base);
+  /* Blanco puro: en la vista móvil este mismo selector pasa a
+     object-fit: contain (ver media query más abajo), donde el fondo del
+     recuadro sí queda visible detrás de la foto. */
+  background: #ffffff;
 }
 
 .product-info span {
