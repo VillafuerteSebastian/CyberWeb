@@ -37,6 +37,12 @@ type Product = {
   image?: string;
 };
 
+// Orden por defecto al entrar a una categoría: precio de menor a mayor, en
+// vez de "como se fueron agregando" (que es lo que se ve si no hay ningún
+// sortOrder aplicado). El usuario puede cambiarlo desde el selector, y
+// "Limpiar filtros" vuelve a este mismo valor (no a "sin ordenar").
+const DEFAULT_SORT_ORDER = "price-asc";
+
 const prettifySlug = (value?: string) => {
   if (!value) return "";
   return value
@@ -81,7 +87,7 @@ const CategoryPage = () => {
   const [selectedTipo, setSelectedTipo] = useState(tipo || "");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [sortOrder, setSortOrder] = useState("");
+  const [sortOrder, setSortOrder] = useState(DEFAULT_SORT_ORDER);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   // Valores marcados por atributo (ej: { "Conexión": ["USB", "Bluetooth"] }).
   // Multi-selección: dentro de un mismo atributo es "o" (cualquiera de los
@@ -215,14 +221,35 @@ const CategoryPage = () => {
     fetchProducts();
   }, [categoria]);
 
-  // Atributos disponibles según los productos cargados, agrupados por
-  // nombre con sus valores únicos (ej: { "Conexión": ["Bluetooth", "USB"] }).
-  // Solo aparecen los atributos que realmente tiene algún producto de esta
-  // categoría — no es una lista fija.
+  // Productos que calzan con la subcategoría/tipo ya elegidos (si hay
+  // alguno seleccionado) — es la base para acotar tanto las marcas como los
+  // atributos disponibles a la sección que se está mirando, en vez de a
+  // todo el catálogo de la categoría. Si estás viendo "Guitarras" no tiene
+  // sentido ofrecer marcas o atributos (ej. "Cantidad de cuerdas") que solo
+  // existen en "Baterías".
+  const productsInSelectedSection = useMemo(() => {
+    return products.filter((product) =>
+      product.asignaciones.some((tipos) => {
+        const productSubcategoria = tipos[0]?.tipo || "";
+        const productTipoFinal = tipos[1]?.tipo || "";
+
+        if (selectedSubcategoria && productSubcategoria !== selectedSubcategoria) return false;
+        if (selectedTipo && productTipoFinal !== selectedTipo) return false;
+
+        return true;
+      })
+    );
+  }, [products, selectedSubcategoria, selectedTipo]);
+
+  // Atributos disponibles según los productos de la sección actualmente
+  // elegida (subcategoría/tipo), agrupados por nombre con sus valores
+  // únicos (ej: { "Conexión": ["Bluetooth", "USB"] }). Solo aparecen los
+  // atributos que realmente tiene algún producto de ESA sección — no todos
+  // los de la categoría entera, ni una lista fija.
   const availableAttributes = useMemo(() => {
     const grouped: Record<string, Set<string>> = {};
 
-    products.forEach((product) => {
+    productsInSelectedSection.forEach((product) => {
       product.atributos.forEach(({ nombre, valor }) => {
         if (!nombre || !valor) return;
         if (!grouped[nombre]) grouped[nombre] = new Set();
@@ -235,29 +262,14 @@ const CategoryPage = () => {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([nombre, valores]) => [nombre, Array.from(valores).sort((a, b) => a.localeCompare(b))])
     );
-  }, [products]);
+  }, [productsInSelectedSection]);
 
-  // Opciones dinámicas de filtros según productos cargados. Las marcas se
-  // acotan a la subcategoría/tipo ya elegidos (si hay), no a todo el
-  // catálogo de la categoría — si estás viendo "Guitarras" no tiene sentido
-  // ofrecer marcas que solo existen en "Baterías".
+  // Marcas disponibles, acotadas a la misma sección (ver arriba).
   const availableBrands = useMemo(() => {
-    const relevantProducts = products.filter((product) =>
-      product.asignaciones.some((tipos) => {
-        const productSubcategoria = tipos[0]?.tipo || "";
-        const productTipoFinal = tipos[1]?.tipo || "";
-
-        if (selectedSubcategoria && productSubcategoria !== selectedSubcategoria) return false;
-        if (selectedTipo && productTipoFinal !== selectedTipo) return false;
-
-        return true;
-      })
+    return [...new Set(productsInSelectedSection.map((p) => p.marca).filter(Boolean))].sort(
+      (a, b) => a.localeCompare(b)
     );
-
-    return [...new Set(relevantProducts.map((p) => p.marca).filter(Boolean))].sort((a, b) =>
-      a.localeCompare(b)
-    );
-  }, [products, selectedSubcategoria, selectedTipo]);
+  }, [productsInSelectedSection]);
 
   // Si al angostar por subcategoría/tipo una marca ya marcada deja de tener
   // sentido (no aparece más en la lista), se destilda sola — si no, seguiría
@@ -265,6 +277,25 @@ const CategoryPage = () => {
   useEffect(() => {
     setSelectedBrands((prev) => prev.filter((marca) => availableBrands.includes(marca)));
   }, [availableBrands]);
+
+  // Mismo destildado automático, pero para valores de atributo que dejaron
+  // de estar disponibles al angostar la sección.
+  useEffect(() => {
+    setSelectedAttributes((prev) => {
+      let changed = false;
+      const next: Record<string, string[]> = {};
+
+      Object.entries(prev).forEach(([nombre, valores]) => {
+        const disponibles = availableAttributes[nombre] || [];
+        const filtrados = valores.filter((valor) => disponibles.includes(valor));
+
+        if (filtrados.length !== valores.length) changed = true;
+        if (filtrados.length > 0) next[nombre] = filtrados;
+      });
+
+      return changed ? next : prev;
+    });
+  }, [availableAttributes]);
 
   const availableSubcategorias = useMemo(() => {
     return [
@@ -502,7 +533,8 @@ const CategoryPage = () => {
   );
 
   const activeFilterCount =
-    [selectedSubcategoria, selectedTipo, minPrice, maxPrice, sortOrder].filter(Boolean).length +
+    [selectedSubcategoria, selectedTipo, minPrice, maxPrice].filter(Boolean).length +
+    (sortOrder && sortOrder !== DEFAULT_SORT_ORDER ? 1 : 0) +
     selectedBrands.length +
     selectedAttributeCount;
 
@@ -513,7 +545,7 @@ const CategoryPage = () => {
     setSelectedAttributes({});
     setMinPrice("");
     setMaxPrice("");
-    setSortOrder("");
+    setSortOrder(DEFAULT_SORT_ORDER);
   };
 
 return (

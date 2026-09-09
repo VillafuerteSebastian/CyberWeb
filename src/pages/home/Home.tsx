@@ -14,6 +14,12 @@ import { useCart } from "../../context/CartContext";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
 import RoutePrefetcher from "../../components/RoutePrefetcher";
 import { formatPrice } from "../../utils/format";
+import {
+  categoryData,
+  getCategoryData,
+  CATEGORIES_UPDATED_EVENT,
+} from "../../data/categoryData";
+import type { CategoryItem } from "../../data/categoryData";
 
 type ProductType = {
   tipo: string;
@@ -173,10 +179,33 @@ const Home = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
 
   const carouselRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Categorías para el bloque "Comprá por categoría": se cargan al montar y
+  // se refrescan solas si el admin agrega/edita/borra algo (mismo evento que
+  // escucha el Navbar), así nunca queda desactualizado sin recargar.
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await getCategoryData();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Error al cargar categorías:", error);
+        setCategories(categoryData);
+      }
+    };
+
+    loadCategories();
+
+    window.addEventListener(CATEGORIES_UPDATED_EVENT, loadCategories);
+    return () => {
+      window.removeEventListener(CATEGORIES_UPDATED_EVENT, loadCategories);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -392,6 +421,30 @@ const Home = () => {
         </div>
       </section>
 
+      {(categories.length > 0 ? categories : categoryData).length > 0 && (
+        <section className="shop-by-category">
+          <div className="section-header">
+            <h2 className="section-title">Comprá por categoría</h2>
+            <Link to="/catalogo" className="section-link">
+              Ver todo el catálogo →
+            </Link>
+          </div>
+
+          <div className="category-grid">
+            {(categories.length > 0 ? categories : categoryData).map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/catalogo?categoria=${cat.id}`}
+                className="category-tile"
+              >
+                <span className="category-tile-icon">{cat.icon}</span>
+                <span className="category-tile-name">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="trust-strip">
         {TRUST_BADGES.map((badge) => (
           <div className="trust-item" key={badge.title}>
@@ -405,7 +458,12 @@ const Home = () => {
       </section>
 
       <section className="products-section">
-        <h2 className="section-title">Productos destacados</h2>
+        <div className="section-header">
+          <h2 className="section-title">Productos destacados</h2>
+          <Link to="/catalogo" className="section-link">
+            Ver todo el catálogo →
+          </Link>
+        </div>
 
         {loading ? (
           <div className="products-carousel">

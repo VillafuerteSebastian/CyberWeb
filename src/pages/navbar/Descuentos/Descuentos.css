@@ -80,7 +80,9 @@
 
 .discount-image {
   height: 160px;
-  background: var(--bg-base);
+  /* Blanco puro, no el gris de --bg-base: así una foto ya recortada sobre
+     blanco se funde con el contenedor. */
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
