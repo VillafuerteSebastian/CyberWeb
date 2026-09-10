@@ -1,7 +1,17 @@
 import { useMemo, useState } from "react";
+import {
+  HiOutlineMapPin,
+  HiOutlineCheckBadge,
+  HiOutlinePencilSquare,
+  HiOutlineStar,
+  HiOutlineTrash,
+  HiOutlineGlobeAmericas,
+  HiOutlineHome,
+} from "react-icons/hi2";
 import { useAuth } from "../../../context/AuthContext";
 import orderService from "../../../services/orderService";
 import { COSTA_RICA_LOCATIONS } from "../../../mnt/data/CostaRicaLocations";
+import { toastSuccess, toastError } from "../../../components/Notify/notify";
 import "../Perfil/Profile.css";
 
 type Address = {
@@ -70,10 +80,10 @@ const DireccionPage = () => {
       await orderService.updateAddresses(updatedDirecciones);
 
       await loadUserProfile();
-      alert("Direcciones actualizadas");
+      toastSuccess("Direcciones actualizadas");
     } catch (error: any) {
       const message = error?.message || "Error al actualizar direcciones";
-      alert(message);
+      toastError(message);
     } finally {
       setLoading(false);
     }
@@ -151,7 +161,7 @@ const DireccionPage = () => {
     e.preventDefault();
 
     if (!calle.trim()) {
-      alert("Debes escribir la dirección de la calle");
+      toastError("Debes escribir la dirección de la calle");
       return;
     }
 
@@ -164,7 +174,7 @@ const DireccionPage = () => {
     );
 
     if (existe) {
-      alert("Esa dirección ya existe");
+      toastError("Esa dirección ya existe");
       return;
     }
 
@@ -239,14 +249,27 @@ const DireccionPage = () => {
 
   return (
     <div className="account-section-page address-page-modern">
-      <h1>Direcciones</h1>
-      <p>Gestiona tus direcciones de envío y facturación.</p>
+      <header className="account-subpage-header">
+        <span className="account-subpage-icon">
+          <HiOutlineMapPin aria-hidden="true" />
+        </span>
+        <div>
+          <h1>Direcciones</h1>
+          <p>Gestiona tus direcciones de envío y facturación.</p>
+        </div>
+      </header>
 
       <div className="address-card modern-address-card saved-addresses-card">
         <h3>Direcciones guardadas</h3>
 
         {direcciones.length === 0 ? (
-          <p>No has agregado una dirección todavía.</p>
+          <div className="empty-state account-empty-state">
+            <span className="empty-state-icon">
+              <HiOutlineMapPin aria-hidden="true" />
+            </span>
+            <h3>No has agregado una dirección todavía</h3>
+            <p>Completá el formulario de abajo para guardar tu primera dirección.</p>
+          </div>
         ) : (
           <div className="address-list compact-address-list">
             {direcciones.map((dir, index) => (
@@ -256,11 +279,19 @@ const DireccionPage = () => {
                   dir.predeterminada ? "is-default" : ""
                 }`}
               >
-                <div className="saved-address-content">
-                  <p>{dir.direccion}</p>
-                  {dir.predeterminada && (
-                    <span className="default-badge">Predeterminada</span>
-                  )}
+                <div className="saved-address-main">
+                  <span className="saved-address-pin" aria-hidden="true">
+                    <HiOutlineMapPin />
+                  </span>
+                  <div className="saved-address-content">
+                    <p>{dir.direccion}</p>
+                    {dir.predeterminada && (
+                      <span className="default-badge">
+                        <HiOutlineCheckBadge aria-hidden="true" />
+                        Predeterminada
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="saved-address-actions compact-address-actions">
@@ -270,6 +301,7 @@ const DireccionPage = () => {
                     onClick={() => handleEditarDireccion(index)}
                     disabled={loading}
                   >
+                    <HiOutlinePencilSquare aria-hidden="true" />
                     Editar
                   </button>
 
@@ -280,6 +312,7 @@ const DireccionPage = () => {
                       onClick={() => handleSetPredeterminada(dir.direccion)}
                       disabled={loading}
                     >
+                      <HiOutlineStar aria-hidden="true" />
                       Principal
                     </button>
                   )}
@@ -290,6 +323,7 @@ const DireccionPage = () => {
                     onClick={() => handleEliminarDireccion(dir.direccion)}
                     disabled={loading}
                   >
+                    <HiOutlineTrash aria-hidden="true" />
                     Eliminar
                   </button>
                 </div>
@@ -310,120 +344,138 @@ const DireccionPage = () => {
           className="modern-address-form compact-address-form"
           onSubmit={handleAgregarOActualizarDireccion}
         >
-          <div className="profile-field">
-            <label htmlFor="pais">
-              País / Región <span>*</span>
-            </label>
-            <select
-              id="pais"
-              value={pais}
-              onChange={(e) => setPais(e.target.value)}
-              className="modern-select"
-            >
-              <option value="Costa Rica">Costa Rica</option>
-            </select>
+          <div className="address-form-group">
+            <span className="address-form-group-title">
+              <HiOutlineGlobeAmericas aria-hidden="true" />
+              Ubicación
+            </span>
+
+            <div className="address-form-grid">
+              <div className="profile-field">
+                <label htmlFor="pais">
+                  País / Región <span>*</span>
+                </label>
+                <select
+                  id="pais"
+                  value={pais}
+                  onChange={(e) => setPais(e.target.value)}
+                  className="modern-select"
+                >
+                  <option value="Costa Rica">Costa Rica</option>
+                </select>
+              </div>
+
+              <div className="profile-field">
+                <label htmlFor="provincia">
+                  Provincia <span>*</span>
+                </label>
+                <select
+                  id="provincia"
+                  value={provincia}
+                  onChange={(e) => {
+                    const nuevaProvincia = e.target.value;
+                    if (!isProvince(nuevaProvincia)) return;
+
+                    const cantonInicial = getCantones(nuevaProvincia)[0] || "";
+                    const nuevosDistritos = getDistritos(nuevaProvincia, cantonInicial);
+
+                    setProvincia(nuevaProvincia);
+                    setCanton(cantonInicial);
+                    setDistrito(nuevosDistritos[0] || "");
+                  }}
+                  className="modern-select"
+                >
+                  {PROVINCIAS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="profile-field">
+                <label htmlFor="canton">
+                  Cantón <span>*</span>
+                </label>
+                <select
+                  id="canton"
+                  value={canton}
+                  onChange={(e) => {
+                    const nuevoCanton = e.target.value;
+                    if (!isCanton(provincia, nuevoCanton)) return;
+
+                    const nuevosDistritos = getDistritos(provincia, nuevoCanton);
+
+                    setCanton(nuevoCanton);
+                    setDistrito(nuevosDistritos[0] || "");
+                  }}
+                  className="modern-select"
+                >
+                  {cantonesDisponibles.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="profile-field">
+                <label htmlFor="distrito">
+                  Distrito <span>*</span>
+                </label>
+                <select
+                  id="distrito"
+                  value={distrito}
+                  onChange={(e) => setDistrito(e.target.value)}
+                  className="modern-select"
+                >
+                  {distritosDisponibles.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div className="profile-field">
-            <label htmlFor="provincia">
-              Provincia <span>*</span>
-            </label>
-            <select
-              id="provincia"
-              value={provincia}
-              onChange={(e) => {
-                const nuevaProvincia = e.target.value;
-                if (!isProvince(nuevaProvincia)) return;
+          <div className="address-form-group">
+            <span className="address-form-group-title">
+              <HiOutlineHome aria-hidden="true" />
+              Detalle de la dirección
+            </span>
 
-                const cantonInicial = getCantones(nuevaProvincia)[0] || "";
-                const nuevosDistritos = getDistritos(nuevaProvincia, cantonInicial);
+            <div className="address-form-grid">
+              <div className="profile-field">
+                <label htmlFor="calle">
+                  Dirección de la calle <span>*</span>
+                </label>
+                <input
+                  id="calle"
+                  type="text"
+                  value={calle}
+                  onChange={(e) => setCalle(e.target.value)}
+                  placeholder="Dirección exacta"
+                  className="modern-input"
+                  required
+                />
+              </div>
 
-                setProvincia(nuevaProvincia);
-                setCanton(cantonInicial);
-                setDistrito(nuevosDistritos[0] || "");
-              }}
-              className="modern-select"
-            >
-              {PROVINCIAS.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="profile-field">
-            <label htmlFor="canton">
-              Cantón <span>*</span>
-            </label>
-            <select
-              id="canton"
-              value={canton}
-              onChange={(e) => {
-                const nuevoCanton = e.target.value;
-                if (!isCanton(provincia, nuevoCanton)) return;
-
-                const nuevosDistritos = getDistritos(provincia, nuevoCanton);
-
-                setCanton(nuevoCanton);
-                setDistrito(nuevosDistritos[0] || "");
-              }}
-              className="modern-select"
-            >
-              {cantonesDisponibles.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="profile-field">
-            <label htmlFor="distrito">
-              Distrito <span>*</span>
-            </label>
-            <select
-              id="distrito"
-              value={distrito}
-              onChange={(e) => setDistrito(e.target.value)}
-              className="modern-select"
-            >
-              {distritosDisponibles.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="profile-field">
-            <label htmlFor="calle">
-              Dirección de la calle <span>*</span>
-            </label>
-            <input
-              id="calle"
-              type="text"
-              value={calle}
-              onChange={(e) => setCalle(e.target.value)}
-              placeholder="Dirección exacta"
-              className="modern-input"
-              required
-            />
-          </div>
-
-          <div className="profile-field">
-            <label htmlFor="codigoPostal">
-              Código postal / ZIP{" "}
-              <span className="optional-text">(opcional)</span>
-            </label>
-            <input
-              id="codigoPostal"
-              type="text"
-              value={codigoPostal}
-              onChange={(e) => setCodigoPostal(e.target.value)}
-              placeholder="Código postal"
-              className="modern-input"
-            />
+              <div className="profile-field">
+                <label htmlFor="codigoPostal">
+                  Código postal / ZIP{" "}
+                  <span className="optional-text">(opcional)</span>
+                </label>
+                <input
+                  id="codigoPostal"
+                  type="text"
+                  value={codigoPostal}
+                  onChange={(e) => setCodigoPostal(e.target.value)}
+                  placeholder="Código postal"
+                  className="modern-input"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="address-form-actions">

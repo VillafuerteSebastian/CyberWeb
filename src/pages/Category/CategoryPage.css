@@ -6,22 +6,45 @@
 }
 
 .category-page-header {
+  position: relative;
+  overflow: hidden;
   margin-bottom: 1.75rem;
+  padding: 1.5rem 1.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elev-sm);
+}
+
+.category-page-header::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -6%;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  opacity: 0.08;
+  pointer-events: none;
 }
 
 .category-breadcrumb {
+  position: relative;
   color: var(--text-muted);
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
 }
 
 .category-page-header h1 {
+  position: relative;
   margin: 0;
   color: var(--text-primary);
   font-size: 1.8rem;
 }
 
 .category-count {
+  position: relative;
   margin-top: 0.5rem;
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -43,7 +66,10 @@
   top: var(--navbar-height);
   max-height: calc(100vh - var(--navbar-height) - 16px);
   overflow-y: auto;
-  background: var(--bg-surface);
+  /* Fondo propio (bg-surface-2, un poco más gris que el blanco puro de las
+     product-card) para que se lea como un panel de utilidad distinto, no
+     como una tarjeta de producto más. */
+  background: var(--bg-surface-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 16px;
@@ -60,10 +86,19 @@
 }
 
 .filters-sidebar-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0;
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.filters-sidebar-header h3 svg {
+  width: 1.1em;
+  height: 1.1em;
+  color: var(--accent-strong);
 }
 
 .filters-sidebar-header-actions {
@@ -223,22 +258,17 @@
   min-width: 0;
 }
 
-/* ===== VACIO ===== */
+/* ===== VACIO =====
+   El look base (ícono + título + texto) lo da la primitiva compartida
+   `.empty-state` de src/index.css; acá se agrega el marco de tarjeta. */
 .empty-category {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 2.5rem 2rem;
-  text-align: center;
 }
 
-.empty-category h2 {
-  margin: 0 0 0.7rem;
-  color: var(--text-primary);
-}
-
-.empty-category p {
-  color: var(--text-muted);
+.empty-category h3 {
+  margin: 0 0 0.3rem;
 }
 
 /* ===== GRID + CARD ===== */
@@ -268,19 +298,31 @@
 
 .product-card-image-wrap {
   position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
 }
 
 .product-sale-badge {
   position: absolute;
   top: 8px;
   left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   background: var(--danger);
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 800;
-  padding: 3px 9px;
+  padding: 0.32em 0.6em;
   border-radius: var(--radius-pill);
+  box-shadow: 0 3px 10px -2px rgba(185, 28, 28, 0.55);
   z-index: 1;
+}
+
+.product-sale-badge svg {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
 }
 
 .product-price-old {

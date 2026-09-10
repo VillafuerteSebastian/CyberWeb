@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import {
+  HiOutlineShoppingCart,
+  HiOutlineBuildingStorefront,
+  HiOutlineTruck,
+  HiOutlineEnvelopeOpen,
+  HiOutlineMapPin,
+} from "react-icons/hi2";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import orderService from "../../services/orderService";
 import { formatPrice } from "../../utils/format";
+import { toastSuccess, toastError } from "../../components/Notify/notify";
 import "../../components/Cart/cart.css";
 
 type DeliveryMethod = "store" | "nearby" | "correos" | "";
@@ -129,7 +137,7 @@ const CartPage = () => {
       await loadUserProfile();
     } catch (error: any) {
       const message = error?.message || "Error al guardar la dirección";
-      alert(message);
+      toastError(message);
     } finally {
       setSavingAddress(false);
     }
@@ -139,7 +147,7 @@ const CartPage = () => {
     const cleanAddress = newAddress.trim();
 
     if (!cleanAddress) {
-      alert("Debes escribir una dirección");
+      toastError("Debes escribir una dirección");
       return;
     }
 
@@ -148,7 +156,7 @@ const CartPage = () => {
     );
 
     if (exists) {
-      alert("Esa dirección ya existe");
+      toastError("Esa dirección ya existe");
       return;
     }
 
@@ -161,7 +169,7 @@ const CartPage = () => {
     ) {
       const zonaLabel =
         ZONAS_ALREDEDORES.find((z) => z.value === zonaSeleccionada)?.label ?? "";
-      alert(
+      toastError(
         `Esa dirección no parece estar en ${zonaLabel}. Incluye el distrito (${zonaLabel}) en el texto para poder usarla con envío a alrededores.`
       );
       return;
@@ -194,7 +202,7 @@ const CartPage = () => {
     };
 
     localStorage.setItem("pendingCheckout", JSON.stringify(pendingCheckout));
-    alert("Debes iniciar sesión para finalizar la compra");
+    toastError("Debes iniciar sesión para finalizar la compra");
     navigate("/login", { state: { from: "/cart" } });
   };
 
@@ -205,23 +213,23 @@ const CartPage = () => {
     }
 
     if (cart.length === 0) {
-      alert("Tu carrito está vacío");
+      toastError("Tu carrito está vacío");
       return;
     }
 
     if (!deliveryMethod) {
-      alert("Debes seleccionar un método de entrega");
+      toastError("Debes seleccionar un método de entrega");
       return;
     }
 
     // ✅ NUEVO: validación de zona para "nearby"
     if (deliveryMethod === "nearby" && !zonaSeleccionada) {
-      alert("Debes seleccionar una zona de entrega válida");
+      toastError("Debes seleccionar una zona de entrega válida");
       return;
     }
 
     if (requiresAddress && !selectedAddress.trim()) {
-      alert("Debes seleccionar una dirección de entrega");
+      toastError("Debes seleccionar una dirección de entrega");
       return;
     }
 
@@ -274,11 +282,11 @@ const CartPage = () => {
       localStorage.removeItem("postLoginRedirect");
 
       clearCart();
-      alert("Orden creada exitosamente");
+      toastSuccess("Orden creada exitosamente");
       navigate("/mi-cuenta/pedidos");
     } catch (error: any) {
       const message = error?.message || "Error al crear la orden";
-      alert(message);
+      toastError(message);
     } finally {
       setCreatingOrder(false);
     }
@@ -291,7 +299,9 @@ const CartPage = () => {
       {cart.length === 0 ? (
         <div className="empty-cart-full">
           <div className="empty-cart-content">
-            <div className="empty-cart-icon">🛒</div>
+            <div className="empty-cart-icon">
+              <HiOutlineShoppingCart aria-hidden="true" />
+            </div>
             <h2>Tu Carrito Está Vacío.</h2>
             <p>
               Antes de proceder al pago, deberá agregar algunos productos a su
@@ -370,7 +380,10 @@ const CartPage = () => {
             </div>
 
             <div className="delivery-section">
-              <h3>Formato de entrega</h3>
+              <h3>
+                <HiOutlineTruck aria-hidden="true" />
+                Formato de entrega
+              </h3>
 
               <label className="delivery-option">
                 <input
@@ -384,6 +397,7 @@ const CartPage = () => {
                     setZonaSeleccionada(""); // ✅ reset zona
                   }}
                 />
+                <HiOutlineBuildingStorefront className="delivery-option-icon" aria-hidden="true" />
                 Retiro en tienda (Gratis)
               </label>
 
@@ -401,6 +415,7 @@ const CartPage = () => {
                     }
                   }}
                 />
+                <HiOutlineMapPin className="delivery-option-icon" aria-hidden="true" />
                 Envío a alrededores ({formatPrice(3000)})
               </label>
 
@@ -418,6 +433,7 @@ const CartPage = () => {
                     }
                   }}
                 />
+                <HiOutlineEnvelopeOpen className="delivery-option-icon" aria-hidden="true" />
                 Correos de Costa Rica ({formatPrice(4500)})
               </label>
 

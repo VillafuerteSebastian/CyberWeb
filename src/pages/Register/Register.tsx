@@ -2,6 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../services/authService";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  HiOutlineIdentification,
+  HiOutlineUser,
+  HiOutlineEnvelope,
+  HiOutlinePhone,
+  HiOutlineLockClosed,
+} from "react-icons/hi2";
+import { toastSuccess, toastError } from "../../components/Notify/notify";
 import "../auth/Auth.css";
 
 const Register = () => {
@@ -21,13 +29,13 @@ const Register = () => {
     e.preventDefault();
 
     if (password.length < 10) {
-      alert("La contraseña debe tener mínimo 10 caracteres");
+      toastError("La contraseña debe tener mínimo 10 caracteres");
       return;
     }
 
     // eslint-disable-next-line security/detect-possible-timing-attacks
     if (password !== confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      toastError("Las contraseñas no coinciden");
       return;
     }
 
@@ -44,12 +52,12 @@ const Register = () => {
         role: "USER",
       });
 
-      alert(response?.message || "Usuario registrado correctamente");
+      toastSuccess(response?.message || "Usuario registrado correctamente");
       navigate("/login");
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Error al registrar usuario";
-      alert(message);
+      toastError(message);
     } finally {
       setLoading(false);
     }
@@ -62,43 +70,56 @@ const Register = () => {
           <h2>Registrarse</h2>
 
           <form className="auth-page-form" onSubmit={handleSubmit}>
-            <input
-              className="auth-page-input"
-              type="text"
-              placeholder="Cédula"
-              value={cedula}
-              onChange={(e) => setCedula(e.target.value)}
-              required
-            />
+            <div className="auth-input-group">
+              <HiOutlineIdentification aria-hidden="true" />
+              <input
+                className="auth-page-input"
+                type="text"
+                placeholder="Cédula"
+                value={cedula}
+                onChange={(e) => setCedula(e.target.value)}
+                required
+              />
+            </div>
 
-            <input
-              className="auth-page-input"
-              type="text"
-              placeholder="Nombre Completo"
-              value={nombreCompleto}
-              onChange={(e) => setNombreCompleto(e.target.value)}
-              required
-            />
+            <div className="auth-input-group">
+              <HiOutlineUser aria-hidden="true" />
+              <input
+                className="auth-page-input"
+                type="text"
+                placeholder="Nombre Completo"
+                value={nombreCompleto}
+                onChange={(e) => setNombreCompleto(e.target.value)}
+                required
+              />
+            </div>
 
-            <input
-              className="auth-page-input"
-              type="email"
-              placeholder="Correo Electrónico"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
-            />
+            <div className="auth-input-group">
+              <HiOutlineEnvelope aria-hidden="true" />
+              <input
+                className="auth-page-input"
+                type="email"
+                placeholder="Correo Electrónico"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+              />
+            </div>
 
-            <input
-              className="auth-page-input"
-              type="text"
-              placeholder="Teléfono"
-              value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-              required
-            />
+            <div className="auth-input-group">
+              <HiOutlinePhone aria-hidden="true" />
+              <input
+                className="auth-page-input"
+                type="text"
+                placeholder="Teléfono"
+                value={telefono}
+                onChange={(e) => setTelefono(e.target.value)}
+                required
+              />
+            </div>
 
-            <div className="password-input-container">
+            <div className="auth-input-group password-input-container">
+              <HiOutlineLockClosed aria-hidden="true" />
               <input
                 className="auth-page-input"
                 type={showPassword ? "text" : "password"}
@@ -117,7 +138,8 @@ const Register = () => {
               </button>
             </div>
 
-            <div className="password-input-container">
+            <div className="auth-input-group password-input-container">
+              <HiOutlineLockClosed aria-hidden="true" />
               <input
                 className="auth-page-input"
                 type={showConfirmPassword ? "text" : "password"}
@@ -149,6 +171,10 @@ const Register = () => {
         <div className="auth-page-divider"></div>
 
         <div className="auth-page-right">
+          <span className="auth-brand-mark">
+            <img src="/logo.png" alt="" />
+          </span>
+
           <h2>¿Ya tienes cuenta?</h2>
           <p>Si ya estás registrado puedes acceder desde aquí.</p>
 

@@ -37,6 +37,12 @@ create table if not exists public.categorias (
   -- la fila raíz, donde subcategoria/tipo son null); si queda vacío, el
   -- frontend elige uno automáticamente según nombre_categoria.
   icono text,
+  -- Orden manual en que se muestra esta categoría raíz (menor = primero) en
+  -- el home ("Comprá por categoría") y el navbar. Solo tiene sentido en la
+  -- fila raíz, igual que `icono`; por defecto todas quedan en 0 y se
+  -- ordenan por fecha de creación, hasta que el admin las reordene desde
+  -- /admin/categories.
+  orden integer not null default 0,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -47,6 +53,7 @@ create index if not exists categorias_subcategoria_idx on public.categorias (cat
 
 -- Por si la tabla ya existía de una corrida anterior de este script.
 alter table public.categorias add column if not exists icono text;
+alter table public.categorias add column if not exists orden integer not null default 0;
 
 -- ----------------------------------------------------------------------------
 -- 3. PRODUCTOS
@@ -68,6 +75,9 @@ create table if not exists public.productos (
   variantes jsonb not null default '[]'::jsonb,
   categorias_extra jsonb not null default '[]'::jsonb,
   atributos jsonb not null default '[]'::jsonb,
+  -- true si el producto no se mantiene en stock y se consigue solo por
+  -- pedido especial (se sigue pudiendo comprar, pero la entrega tarda más).
+  por_encargo boolean not null default false,
   is_deleted boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -100,6 +110,11 @@ create index if not exists productos_categorias_extra_idx on public.productos us
 alter table public.productos add column if not exists atributos jsonb not null default '[]'::jsonb;
 
 create index if not exists productos_atributos_idx on public.productos using gin (atributos jsonb_path_ops);
+
+-- Producto "solo por encargo" (sin stock propio, se pide especial). Se
+-- administra desde un botón en la tarjeta de /admin/add-product, igual que
+-- el precio de oferta.
+alter table public.productos add column if not exists por_encargo boolean not null default false;
 
 -- ----------------------------------------------------------------------------
 -- 4. DESCUENTOS

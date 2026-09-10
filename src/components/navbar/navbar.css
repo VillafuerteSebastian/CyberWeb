@@ -32,6 +32,17 @@
   z-index: 1300;
 }
 
+/* Línea de cierre con el degradé de acento: un detalle de marca chico al
+   pie de toda la navbar (superior + categorías), para que no termine en un
+   borde plano sin más. */
+.site-navbar::after {
+  content: "";
+  display: block;
+  height: 2px;
+  background: var(--nav-accent-gradient);
+  opacity: 0.6;
+}
+
 .top-navbar {
   /* relative (no sticky): sigue siendo el contenedor de posición para el
      buscador móvil (top:100%) y demás hijos absolutos; el sticky real ahora
@@ -81,10 +92,30 @@
   justify-content: center;
 }
 
-.search-bar input {
+.search-bar-inner {
+  position: relative;
   width: 100%;
   max-width: 650px;
-  padding: 0.85rem 1.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.search-bar-icon {
+  position: absolute;
+  left: 1.1rem;
+  color: var(--nav-text-faint);
+  font-size: 0.85rem;
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.search-bar-inner:focus-within .search-bar-icon {
+  color: var(--nav-accent);
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.85rem 1.3rem 0.85rem 2.6rem;
   border-radius: var(--radius-pill);
   border: 1px solid var(--nav-border);
   outline: none;
@@ -268,6 +299,9 @@
 }
 
 .category-links-top a {
+  position: relative;
+  display: inline-block;
+  padding: 0.3rem 0;
   color: var(--nav-text-secondary);
   text-decoration: none;
   font-size: 0.92rem;
@@ -276,8 +310,28 @@
   white-space: nowrap;
 }
 
+/* Subrayado que crece desde el centro al pasar el mouse, en vez de un
+   simple cambio de color — un toque de detalle más "cuidado" para la
+   navegación secundaria. */
+.category-links-top a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 100%;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--nav-accent-gradient);
+  transform: translateX(-50%) scaleX(0);
+  transition: transform 0.2s ease;
+}
+
 .category-links-top a:hover {
   color: var(--nav-accent);
+}
+
+.category-links-top a:hover::after {
+  transform: translateX(-50%) scaleX(1);
 }
 
 /* ===== PANEL GRANDE =====
@@ -319,6 +373,7 @@
   gap: 0.9rem;
   padding: 0.9rem 1.25rem;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   color: var(--text-secondary);
   font-size: 0.95rem;
@@ -517,8 +572,12 @@
   }
 
   .search-bar input {
-    padding: 0.7rem 0.9rem;
+    padding: 0.7rem 0.9rem 0.7rem 2.4rem;
     font-size: 16px;
+  }
+
+  .search-bar-icon {
+    left: 1.4rem;
   }
 
   .social-icons,
@@ -694,11 +753,20 @@
   background: #ffffff;
 }
 
-/* Filas planas con separador fino, ícono discreto y etiqueta en mayúsculas
-   — como la lista de categorías de la referencia, no como un botón/pill. */
-.category-navbar-modern-mobile .category-side-item {
-  border-left: none;
+/* Fila = etiqueta (Link, navega a la categoría completa) + botón aparte
+   para desplegar subcategorías — antes era un solo botón que solo
+   desplegaba, sin forma de ir directo a "todos los productos" de esa
+   categoría principal. */
+.category-navbar-modern-mobile .category-side-item-row {
+  display: flex;
+  align-items: stretch;
   border-bottom: 1px solid var(--border-subtle);
+}
+
+.category-navbar-modern-mobile .category-side-item {
+  flex: 1;
+  min-width: 0;
+  border-left: none;
   border-radius: 0;
   padding: 0.85rem 1.1rem;
   text-transform: uppercase;
@@ -712,33 +780,50 @@
   font-size: 1.05rem;
 }
 
-.category-navbar-modern-mobile .category-side-item:hover {
+.category-navbar-modern-mobile .category-side-item-row:hover {
   background: var(--bg-base);
+}
+
+.category-navbar-modern-mobile .category-side-item-row:hover .category-side-item {
   color: var(--text-primary);
 }
 
-.category-navbar-modern-mobile .category-arrow {
-  margin-left: auto;
-  font-size: 14px;
+.category-expand-btn {
+  flex-shrink: 0;
+  width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
   color: var(--text-faint);
+}
+
+.category-navbar-modern-mobile .category-arrow {
+  font-size: 14px;
+  color: inherit;
   transition: transform 0.2s ease;
 }
 
 /* La categoría abierta se rellena con el degradado de acento (como el rojo
    de la referencia al expandir): deja clarísimo cuál está abierta entre
    una lista larga, en vez de un simple tinte gris. */
-.category-navbar-modern-mobile .category-side-item.active {
+.category-navbar-modern-mobile .category-side-item-row.active {
   background: var(--accent-gradient);
+}
+
+.category-navbar-modern-mobile .category-side-item-row.active .category-side-item,
+.category-navbar-modern-mobile .category-side-item-row.active .category-expand-btn {
   color: #ffffff;
 }
 
-.category-navbar-modern-mobile .category-side-item.active .category-side-icon {
+.category-navbar-modern-mobile .category-side-item-row.active .category-side-icon {
   color: #ffffff;
 }
 
-.category-navbar-modern-mobile .category-side-item.active .category-arrow {
+.category-navbar-modern-mobile .category-side-item-row.active .category-arrow {
   transform: rotate(90deg);
-  color: #ffffff;
 }
 
 .category-navbar-modern-mobile .subcategory-list {

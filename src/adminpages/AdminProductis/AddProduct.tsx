@@ -11,6 +11,11 @@ import {
   HiOutlineFolderPlus,
   HiOutlineSwatch,
   HiOutlineFunnel,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+  HiOutlineCube,
+  HiOutlineTag,
+  HiOutlineClock,
 } from "react-icons/hi2";
 import productService, { isOnSale } from "../../services/productService";
 import { formatPrice } from "../../utils/format";
@@ -20,6 +25,7 @@ import {
   CATEGORIES_UPDATED_EVENT,
 } from "../../data/categoryData";
 import type { CategoryItem } from "../../data/categoryData";
+import { toastSuccess, toastError, confirmDialog } from "../../components/Notify/notify";
 
 type TipoProducto = {
   tipo: string;
@@ -72,6 +78,9 @@ type AdminProduct = {
   variantes?: VarianteProducto[];
   atributos?: AtributoProducto[];
   available?: boolean;
+  /** Sin stock propio, se consigue solo por pedido especial. Se administra
+   * con un botón en la tarjeta, igual que el precio de oferta. */
+  porEncargo?: boolean;
 };
 
 const emptyForm = {
@@ -106,6 +115,7 @@ const AddProduct = () => {
   const [saving, setSaving] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [togglingEncargoId, setTogglingEncargoId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(12);
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -458,6 +468,7 @@ const AddProduct = () => {
           variantes: Array.isArray(product.variantes) ? product.variantes : [],
           atributos: Array.isArray(product.atributos) ? product.atributos : [],
           available: product.available !== false,
+          porEncargo: product.por_encargo === true,
         };
       });
 
@@ -497,9 +508,31 @@ const AddProduct = () => {
     } catch (error: any) {
       const backendMessage =
         error?.message || "No se pudo actualizar la disponibilidad";
-      alert(backendMessage);
+      toastError(backendMessage);
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  // Igual patrón que handleToggleAvailable: se administra directo desde la
+  // tarjeta del producto ya guardado, no desde el formulario de alta.
+  const handleToggleMadeToOrder = async (product: AdminProduct) => {
+    const newValue = !product.porEncargo;
+
+    try {
+      setTogglingEncargoId(product.id);
+      await productService.updateProduct(product.id, { por_encargo: newValue });
+
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, porEncargo: newValue } : p))
+      );
+      setAllProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, porEncargo: newValue } : p))
+      );
+    } catch (error: any) {
+      toastError(error?.message || "No se pudo actualizar \"por encargo\"");
+    } finally {
+      setTogglingEncargoId(null);
     }
   };
 
@@ -520,7 +553,7 @@ const AddProduct = () => {
     } else if (offerDraft.mode === "percent" && offerDraft.percent.trim()) {
       const pct = Number(offerDraft.percent);
       if (pct <= 0 || pct >= 100) {
-        alert("El porcentaje de descuento debe estar entre 1 y 99");
+        toastError("El porcentaje de descuento debe estar entre 1 y 99");
         return;
       }
       offerPriceNum = Math.round(product.price * (1 - pct / 100));
@@ -530,7 +563,7 @@ const AddProduct = () => {
       offerPriceNum !== null &&
       (offerPriceNum <= 0 || offerPriceNum >= product.price)
     ) {
-      alert("El precio de oferta debe ser mayor a 0 y menor al precio normal");
+      toastError("El precio de oferta debe ser mayor a 0 y menor al precio normal");
       return;
     }
 
@@ -549,7 +582,7 @@ const AddProduct = () => {
 
       setEditingOfferId(null);
     } catch (error: any) {
-      alert(error?.message || "No se pudo actualizar el precio de oferta");
+      toastError(error?.message || "No se pudo actualizar el precio de oferta");
     } finally {
       setSavingOffer(false);
     }
@@ -569,7 +602,7 @@ const AddProduct = () => {
 
       setEditingOfferId(null);
     } catch (error: any) {
-      alert(error?.message || "No se pudo quitar el precio de oferta");
+      toastError(error?.message || "No se pudo quitar el precio de oferta");
     } finally {
       setSavingOffer(false);
     }
@@ -628,7 +661,7 @@ const AddProduct = () => {
     const validFiles = files.filter((file) => file.type.startsWith("image/"));
 
     if (validFiles.length === 0) {
-      if (files.length > 0) alert("Solo se permiten archivos de imagen");
+      if (files.length > 0) toastError("Solo se permiten archivos de imagen");
       return;
     }
 
@@ -640,7 +673,7 @@ const AddProduct = () => {
           const publicUrl = await productService.uploadProductImage(file);
           setImages((prev) => [...prev, publicUrl]);
         } catch (error: any) {
-          alert(error?.message || "No se pudo subir una de las imágenes");
+          toastError(error?.message || "No se pudo subir una de las imágenes");
         }
       }
     } finally {
@@ -808,7 +841,7 @@ const AddProduct = () => {
       !form.subcategoria.trim() ||
       !form.tipoFinal.trim()
     ) {
-      alert("Completa todos los campos obligatorios (incluida al menos una imagen)");
+      toastError("Completa todos los campos obligatorios (incluida al menos una imagen)");
       return;
     }
 
@@ -861,10 +894,10 @@ const AddProduct = () => {
 
       if (editingProductId) {
         await productService.updateProduct(editingProductId, payload);
-        alert("Producto actualizado correctamente");
+        toastSuccess("Producto actualizado correctamente");
       } else {
         await productService.createProduct(payload);
-        alert("Producto agregado correctamente");
+        toastSuccess("Producto agregado correctamente");
       }
 
       resetForm();
@@ -872,15 +905,16 @@ const AddProduct = () => {
       setMobileTab("products");
     } catch (error: any) {
       console.error("Error al guardar producto:", error);
-      alert(error?.message || "No se pudo guardar el producto");
+      toastError(error?.message || "No se pudo guardar el producto");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm(
-      "¿Seguro que deseas eliminar este producto?"
+    const confirmDelete = await confirmDialog(
+      "¿Seguro que deseas eliminar este producto?",
+      { title: "Eliminar producto", confirmText: "Eliminar", danger: true }
     );
 
     if (!confirmDelete) return;
@@ -894,10 +928,10 @@ const AddProduct = () => {
         resetForm();
       }
 
-      alert("Producto eliminado correctamente");
+      toastSuccess("Producto eliminado correctamente");
     } catch (error: any) {
       console.error("Error al eliminar producto:", error);
-      alert(error?.message || "No se pudo eliminar el producto");
+      toastError(error?.message || "No se pudo eliminar el producto");
     }
   };
 
@@ -919,14 +953,6 @@ const AddProduct = () => {
               onClick={() => navigate("/")}
             >
               Volver al inicio
-            </button>
-
-            <button
-              type="button"
-              className="secondary-btn"
-              onClick={() => navigate("/admin/categories")}
-            >
-              Gestión de Categorías
             </button>
 
             {editingProductId && (
@@ -1729,6 +1755,7 @@ const AddProduct = () => {
                       <div key={product.id} className="admin-product-card">
                         {onSale && (
                           <span className="admin-sale-badge">
+                            <HiOutlineTag aria-hidden="true" />
                             -
                             {Math.round(
                               ((product.price - (product.offerPrice as number)) /
@@ -1736,6 +1763,12 @@ const AddProduct = () => {
                                 100
                             )}
                             %
+                          </span>
+                        )}
+
+                        {product.porEncargo && (
+                          <span className="preorder-ribbon">
+                            <HiOutlineClock aria-hidden="true" /> Por encargo
                           </span>
                         )}
 
@@ -1815,11 +1848,40 @@ const AddProduct = () => {
                             disabled={togglingId === product.id}
                             onClick={() => handleToggleAvailable(product)}
                           >
-                            {togglingId === product.id
-                              ? "Actualizando..."
-                              : product.available
-                              ? "✅ Disponible — deshabilitar"
-                              : "❌ No disponible — habilitar"}
+                            {togglingId === product.id ? (
+                              "Actualizando..."
+                            ) : product.available ? (
+                              <>
+                                <HiOutlineCheckCircle aria-hidden="true" /> Disponible — deshabilitar
+                              </>
+                            ) : (
+                              <>
+                                <HiOutlineXCircle aria-hidden="true" /> No disponible — habilitar
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            className={
+                              product.porEncargo
+                                ? "secondary-btn full-btn offer-toggle-active"
+                                : "secondary-btn full-btn"
+                            }
+                            disabled={togglingEncargoId === product.id}
+                            onClick={() => handleToggleMadeToOrder(product)}
+                            title="Producto sin stock propio, que se consigue por pedido especial"
+                          >
+                            {togglingEncargoId === product.id ? (
+                              "Actualizando..."
+                            ) : (
+                              <>
+                                <HiOutlineCube aria-hidden="true" />{" "}
+                                {product.porEncargo
+                                  ? "Por encargo — quitar"
+                                  : "Marcar como por encargo"}
+                              </>
+                            )}
                           </button>
 
                           <button
@@ -1835,9 +1897,10 @@ const AddProduct = () => {
                                 : openOfferEditor(product)
                             }
                           >
+                            <HiOutlineTag aria-hidden="true" />{" "}
                             {onSale
-                              ? `🏷️ Oferta: ${formatPrice(product.offerPrice as number)}`
-                              : "🏷️ Agregar precio de oferta"}
+                              ? `Oferta: ${formatPrice(product.offerPrice as number)}`
+                              : "Agregar precio de oferta"}
                           </button>
 
                           {editingOfferId === product.id && (

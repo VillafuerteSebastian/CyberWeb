@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
+import {
+  HiOutlineShoppingBag,
+  HiOutlineExclamationTriangle,
+} from "react-icons/hi2";
 import orderService from "../../../services/orderService";
+import productService from "../../../services/productService";
 import { formatPrice } from "../../../utils/format";
 import "../Perfil/Profile.css";
 
@@ -27,6 +32,10 @@ const PedidosPage = () => {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Miniatura por product_id. La tabla orden_items no guarda la imagen del
+  // producto (solo nombre/precio/cantidad al momento de la compra), así que
+  // se completa aparte con una sola consulta por lote a productos.
+  const [productImages, setProductImages] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchPedidos = async () => {
@@ -55,6 +64,15 @@ const PedidosPage = () => {
         }));
 
         setPedidos(pedidosData);
+
+        const productIds = pedidosData.flatMap((pedido) =>
+          pedido.productos.map((p) => p.product_id)
+        );
+
+        productService
+          .getProductImagesByIds(productIds)
+          .then(setProductImages)
+          .catch((err) => console.error("Error obteniendo imágenes de productos:", err));
       } catch (err: any) {
         setError(err?.message || "Error al obtener los pedidos");
       } finally {
@@ -121,23 +139,36 @@ const PedidosPage = () => {
 
   return (
     <div className="account-section-page">
-      <h1>Mis pedidos</h1>
-
-      <p>
-        Aquí podrás ver el historial de compras realizadas en nuestra tienda.
-      </p>
+      <header className="account-subpage-header">
+        <span className="account-subpage-icon">
+          <HiOutlineShoppingBag aria-hidden="true" />
+        </span>
+        <div>
+          <h1>Mis pedidos</h1>
+          <p>Aquí podrás ver el historial de compras realizadas en nuestra tienda.</p>
+        </div>
+      </header>
 
       {loading ? (
-        <div className="empty-state">
+        <div className="empty-state account-empty-state">
+          <span className="empty-state-icon">
+            <HiOutlineShoppingBag aria-hidden="true" />
+          </span>
           <h3>Cargando pedidos...</h3>
         </div>
       ) : error ? (
-        <div className="empty-state">
+        <div className="empty-state account-empty-state">
+          <span className="empty-state-icon">
+            <HiOutlineExclamationTriangle aria-hidden="true" />
+          </span>
           <h3>Error al cargar pedidos</h3>
           <p>{error}</p>
         </div>
       ) : pedidos.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state account-empty-state">
+          <span className="empty-state-icon">
+            <HiOutlineShoppingBag aria-hidden="true" />
+          </span>
           <h3>No tienes pedidos todavía</h3>
           <p>Cuando realices tu primera compra aparecerá aquí.</p>
         </div>
@@ -160,7 +191,17 @@ const PedidosPage = () => {
               <ul className="order-card-items">
                 {(pedido.productos || []).map((item, index) => (
                   <li key={`${pedido.id}-${index}`}>
-                    <span>{item.nombre}</span>
+                    <span className="order-item-line-product">
+                      <img
+                        src={productImages[item.product_id] || "/placeholder-product.png"}
+                        alt=""
+                        className="order-item-thumb"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder-product.png";
+                        }}
+                      />
+                      {item.nombre}
+                    </span>
                     <span>x{item.cantidad}</span>
                   </li>
                 ))}
