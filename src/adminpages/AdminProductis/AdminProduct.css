@@ -804,6 +804,7 @@
 
 .admin-product-card {
   position: relative;
+  overflow: hidden;
   background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -816,14 +817,26 @@
   position: absolute;
   top: 0.6rem;
   left: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   background: var(--danger);
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 800;
-  padding: 0.25rem 0.55rem;
+  padding: 0.3rem 0.6rem;
   border-radius: var(--radius-pill);
+  box-shadow: 0 3px 10px -2px rgba(185, 28, 28, 0.55);
   z-index: 1;
 }
+
+.admin-sale-badge svg {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+}
+
+/* La cinta "Por encargo" (.preorder-ribbon) vive centralizada en index.css. */
 
 .admin-product-card:hover {
   transform: translateY(-3px);

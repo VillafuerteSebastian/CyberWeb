@@ -14,6 +14,8 @@ export interface Categoria {
    * automáticamente según el nombre — ver `guessCategoryIcon` en
    * `data/categoryData.tsx`. */
   icono?: string;
+  /** Orden manual de la fila raíz (menor = primero). Ver columna en schema.sql. */
+  orden?: number;
   created_at?: string;
   updated_at?: string;
   is_deleted?: boolean;
@@ -27,6 +29,7 @@ export interface CategoriaCreate {
   tipo?: string;
   nombre_tipo?: string;
   icono?: string;
+  orden?: number;
 }
 
 export interface CategoriaUpdate {
@@ -38,6 +41,7 @@ export interface CategoriaUpdate {
   nombre_tipo?: string;
   /** string para fijar un emoji, null para borrarlo (vuelve al automático). */
   icono?: string | null;
+  orden?: number;
 }
 
 export interface CategoriaUnica {
@@ -60,6 +64,8 @@ export interface ArbolCategoria {
   nombre_categoria: string;
   /** Emoji personalizado de la categoría (fila raíz), si el admin definió uno. */
   icono?: string;
+  /** Orden manual de esta categoría raíz frente a las demás (menor = primero). */
+  orden: number;
   subcategorias: {
     [key: string]: {
       nombre: string;
@@ -83,6 +89,7 @@ const rowToCategoria = (row: any): Categoria => ({
   tipo: row.tipo || undefined,
   nombre_tipo: row.nombre_tipo || undefined,
   icono: row.icono || undefined,
+  orden: typeof row.orden === "number" ? row.orden : 0,
   created_at: row.created_at,
   updated_at: row.updated_at,
   is_deleted: row.is_deleted,
@@ -108,10 +115,12 @@ const buildCategoryTree = (rows: Categoria[]): ArbolCategoria[] => {
     const nombre_categoria =
       catRows.find((r) => r.nombre_categoria)?.nombre_categoria || categoria;
 
-    // El emoji personalizado solo tiene sentido en la fila raíz (sin
-    // subcategoria), que es la única que el formulario de categoría llega a
-    // escribir con `icono`.
-    const icono = catRows.find((r) => !r.subcategoria && r.icono)?.icono;
+    // El emoji personalizado y el orden manual solo tienen sentido en la
+    // fila raíz (sin subcategoria), que es la única que el formulario de
+    // categoría llega a escribir con `icono`/`orden`.
+    const filaRaiz = catRows.find((r) => !r.subcategoria);
+    const icono = filaRaiz?.icono;
+    const orden = filaRaiz?.orden ?? 0;
 
     const subcategorias: ArbolCategoria["subcategorias"] = {};
 
@@ -135,8 +144,14 @@ const buildCategoryTree = (rows: Categoria[]): ArbolCategoria[] => {
       }
     });
 
-    tree.push({ categoria, nombre_categoria, icono, subcategorias });
+    tree.push({ categoria, nombre_categoria, icono, orden, subcategorias });
   });
+
+  // Orden manual (menor = primero) sobre las categorías raíz. Array.sort es
+  // estable, así que las que empatan en `orden` (todas en 0 por defecto)
+  // conservan el orden en que llegaron — es decir, `created_at` — hasta que
+  // el admin las reordene explícitamente desde /admin/categories.
+  tree.sort((a, b) => a.orden - b.orden);
 
   return tree;
 };
@@ -266,6 +281,7 @@ class CategoryService {
           tipo: categoryData.tipo || null,
           nombre_tipo: categoryData.nombre_tipo || null,
           icono: categoryData.icono || null,
+          orden: categoryData.orden ?? 0,
         })
         .select("id")
         .single();

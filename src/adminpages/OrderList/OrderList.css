@@ -462,6 +462,39 @@
   color: var(--text-primary);
 }
 
+.order-item-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.order-item-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 6px;
+  box-sizing: content-box;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* Foto real del producto cuando existe (se resuelve por product_id, ver
+   OrderList.tsx) — mismo tamaño que .order-item-icon, que se muestra en su
+   lugar solo si no hay imagen (producto borrado, sin product_id, etc.). */
+.order-item-thumb {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  padding: 3px;
+  box-sizing: border-box;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
 .availability-actions {
   display: flex;
   gap: 0.6rem;

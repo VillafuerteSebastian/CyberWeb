@@ -33,6 +33,55 @@
   letter-spacing: 0.02em;
 }
 
+/* ===== USUARIO (encabezado del sidebar) ===== */
+.account-sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.account-avatar {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-gradient);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-glow);
+}
+
+.account-sidebar-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.account-sidebar-user-info strong {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-sidebar-user-info span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ===== MENU ===== */
 .account-menu {
   display: flex;
@@ -42,6 +91,9 @@
 
 .account-menu a,
 .account-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   text-decoration: none;
   color: var(--text-secondary);
   background: transparent;
@@ -54,9 +106,22 @@
   transition: background 0.2s ease, color 0.2s ease;
 }
 
+.account-menu a svg,
+.account-logout-btn svg {
+  flex-shrink: 0;
+  width: 1.15em;
+  height: 1.15em;
+  color: var(--text-faint);
+  transition: color 0.2s ease;
+}
+
 .account-menu a:hover,
 .account-logout-btn:hover {
   background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.account-menu a:hover svg {
   color: var(--accent);
 }
 
@@ -66,13 +131,26 @@
   font-weight: 700;
 }
 
+.account-menu a.active svg {
+  color: var(--accent);
+}
+
 .account-logout-btn {
   color: var(--danger);
+}
+
+.account-logout-btn svg {
+  color: var(--danger);
+  opacity: 0.75;
 }
 
 .account-logout-btn:hover {
   background: var(--danger-soft);
   color: var(--danger);
+}
+
+.account-logout-btn:hover svg {
+  opacity: 1;
 }
 
 /* ===== CONTENIDO PRINCIPAL ===== */
@@ -86,26 +164,59 @@
 }
 
 /* ===== ESCRITORIO / DASHBOARD ===== */
-.account-section h1 {
-  margin-top: 0;
-  margin-bottom: 1rem;
+.account-welcome {
+  position: relative;
+  overflow: hidden;
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--border-subtle);
+}
+
+.account-welcome::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -8%;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.account-welcome-kicker {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  margin-bottom: 0.4rem;
+}
+
+.account-welcome h1 {
+  margin: 0 0 0.6rem;
   color: var(--text-primary);
   font-size: 1.6rem;
   font-weight: 700;
 }
 
-.account-section p {
-  color: var(--text-muted);
+.account-welcome p {
+  position: relative;
+  color: var(--text-secondary);
   line-height: 1.7;
   font-size: 0.95rem;
-  max-width: 620px;
+  max-width: 560px;
 }
 
 .account-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(240px, 1fr));
   gap: 1.25rem;
-  margin-top: 1.5rem;
 }
 
 .account-card {
@@ -123,6 +234,19 @@
   transform: translateY(-3px);
   border-color: var(--border-accent);
   box-shadow: var(--shadow-elev-sm);
+}
+
+.account-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 1.2rem;
 }
 
 .account-card h3 {
@@ -151,25 +275,17 @@
   color: var(--danger);
 }
 
+.logout-card .account-card-icon {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 /* ===== ESTILO GENERAL PARA LAS SUBPÁGINAS ===== */
 .account-subpage,
 .account-section-page {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-}
-
-.account-section-page > h1 {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.account-section-page > p {
-  margin: -0.75rem 0 0;
-  color: var(--text-muted);
-  font-size: 0.92rem;
 }
 
 .account-subpage-header h1 {
@@ -185,6 +301,28 @@
   line-height: 1.6;
   font-size: 0.92rem;
   max-width: 650px;
+}
+
+.account-subpage-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.account-subpage-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 1.3rem;
 }
 
 /* ===== TARJETA BASE / BOX ===== */
@@ -211,19 +349,15 @@
   margin-bottom: 0.8rem;
 }
 
-/* ===== ESTADO VACÍO ===== */
-.empty-state {
-  text-align: center;
-  padding: 2.5rem;
+/* ===== ESTADO VACÍO =====
+   El look base (ícono + título + texto) lo da la primitiva compartida
+   `.empty-state` de src/index.css; acá solo se agrega el marco propio de
+   "mi cuenta" (fondo + borde punteado) para que no quede pegado al borde
+   de `.account-content`. */
+.account-empty-state {
   background: var(--bg-base);
   border: 1px dashed var(--border-subtle);
   border-radius: var(--radius-md);
-  color: var(--text-muted);
-}
-
-.empty-state h3 {
-  color: var(--text-primary);
-  margin-bottom: 0.4rem;
 }
 
 /* ===== PEDIDOS (tarjetas) ===== */
@@ -294,13 +428,34 @@
 
 .order-card-items li {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   font-size: 0.88rem;
   color: var(--text-secondary);
 }
 
 .order-card-items li span:last-child {
+  flex-shrink: 0;
   color: var(--text-faint);
+}
+
+.order-item-line-product {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.order-item-thumb {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  padding: 2px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
 }
 
 .order-card-bottom {
@@ -341,6 +496,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.45em;
+}
+
+.account-btn svg {
+  flex-shrink: 0;
+  width: 1.05em;
+  height: 1.05em;
 }
 
 .account-btn:hover:not(:disabled) {
@@ -385,12 +547,44 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .saved-address-item.is-default {
   border-color: var(--border-accent);
   background: var(--accent-soft);
+  box-shadow: var(--shadow-elev-sm);
+}
+
+.saved-address-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.saved-address-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.saved-address-pin {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  color: var(--accent-strong);
+  font-size: 1.05rem;
+  margin-top: 0.1rem;
+}
+
+.is-default .saved-address-pin {
+  background: var(--accent-gradient);
+  color: #ffffff;
 }
 
 .saved-address-content p {
@@ -401,8 +595,10 @@
 }
 
 .default-badge {
-  display: inline-block;
-  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  width: fit-content;
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius-pill);
   background: var(--accent-soft);
@@ -432,6 +628,33 @@
 }
 
 .modern-address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Agrupa los campos en "Ubicación" (selects en cascada) y "Detalle de la
+   dirección" (calle/CP) para que el formulario se lea en dos pasos en vez
+   de una grilla plana de seis campos sueltos. */
+.address-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.address-form-group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.address-form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
@@ -517,6 +740,27 @@
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Campo con ícono a la izquierda (correo, contraseña, etc.) */
+.profile-field-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-field-icon svg {
+  position: absolute;
+  left: 0.9rem;
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.profile-field-icon input {
+  width: 100%;
+  padding-left: 2.6rem;
+}
+
 .profile-password-box {
   margin-top: 1.5rem;
   border: 1px solid var(--border-subtle);
@@ -557,7 +801,7 @@
 
 @media (max-width: 768px) {
   .profile-grid-two,
-  .modern-address-form {
+  .address-form-grid {
     grid-template-columns: 1fr;
   }
 

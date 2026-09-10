@@ -170,3 +170,228 @@ input[type="number"] {
   font-family: var(--font-display);
   letter-spacing: 0.04em;
 }
+
+/* ==========================================================================
+   ETIQUETA "POR ENCARGO"
+   Antes era una cinta diagonal (rotate 45deg) que sobresalía del borde del
+   contenedor — a los anchos de tarjeta más chicos (grilla del catálogo en
+   mobile, tarjetas del carrusel) el contenedor la recortaba a la mitad y el
+   texto se leía "OR ENCARGO". Ahora es una píldora recta en la esquina
+   superior derecha, hermana del badge de oferta (`.sale-badge` y afines)
+   que va en la esquina opuesta — mismo lenguaje visual, sin riesgo de
+   recorte a ningún tamaño. Centralizada acá (no repetida por página) porque
+   se usa igual en el catálogo, el home, el admin y el detalle de producto.
+
+   Requisito del contenedor que la recibe: `position: relative`. */
+.preorder-ribbon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  background: var(--accent-2);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 0.3em 0.65em;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 3px 10px -2px rgba(109, 40, 217, 0.55);
+  pointer-events: none;
+}
+
+.preorder-ribbon svg {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+}
+
+@media (max-width: 480px) {
+  .preorder-ribbon {
+    font-size: 0.6rem;
+    padding: 0.28em 0.55em;
+  }
+}
+
+/* ==========================================================================
+   PRIMITIVAS COMPARTIDAS
+   Formalizan patrones que ya se repetían a mano (copiados de página en
+   página): card, botón, badge, encabezado de sección y estado vacío. Son
+   aditivas — no reemplazan clases existentes de cada página, cada página
+   las va adoptando donde tenga sentido. Usan únicamente los tokens de
+   arriba, ningún color nuevo.
+   ========================================================================== */
+
+/* --- Card genérica ------------------------------------------------------ */
+.surface-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elev-sm);
+}
+
+/* --- Botones -------------------------------------------------------------
+   .btn es la base (tamaño, tipografía, estados de foco/disabled); combinar
+   con .btn-primary / .btn-secondary / .btn-ghost para el relleno. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0.85em 1.6em;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+    background-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none !important;
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--border-accent);
+  background: var(--bg-elevated-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--accent-strong);
+  border-color: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+/* --- Badges de estado ----------------------------------------------------
+   Fondo "-soft" + texto sólido del mismo color, reutilizando los pares que
+   ya existían dispersos por el sitio (éxito/error/aviso/acento). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.35em 0.75em;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.badge-danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.badge-accent {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* --- Encabezado de sección -------------------------------------------------
+   "Kicker" chico en mayúsculas + título grande, para dar jerarquía
+   consistente al arranque de cada sección (home, category, etc.) en vez de
+   un <h2> suelto. */
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-heading .kicker {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.section-heading h2,
+.section-heading h3 {
+  font-size: clamp(1.35rem, 1.1rem + 1vw, 1.9rem);
+  color: var(--text-primary);
+}
+
+.section-heading p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  max-width: 60ch;
+}
+
+/* --- Estado vacío ---------------------------------------------------------
+   Reemplaza los "no hay nada" de solo texto repetidos en carrito, catálogo
+   y mi cuenta por un bloque consistente con ícono, título y acción opcional. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-state-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 1.8rem;
+}
+
+.empty-state h3 {
+  color: var(--text-primary);
+  font-size: 1.15rem;
+}
+
+.empty-state p {
+  max-width: 42ch;
+  font-size: 0.92rem;
+}

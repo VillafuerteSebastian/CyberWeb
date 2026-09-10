@@ -1,6 +1,13 @@
 import { useMemo, useState } from "react";
+import {
+  HiOutlineUserCircle,
+  HiOutlineIdentification,
+  HiOutlineEnvelope,
+  HiOutlineLockClosed,
+} from "react-icons/hi2";
 import { useAuth } from "../../../context/AuthContext";
 import { changePassword } from "../../../services/authService";
+import { toastSuccess, toastError } from "../../../components/Notify/notify";
 import "../Perfil/Profile.css";
 
 const DetallesPerfilPage = () => {
@@ -65,17 +72,17 @@ const DetallesPerfilPage = () => {
     e.preventDefault();
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      alert("Completa todos los campos de contraseña");
+      toastError("Completa todos los campos de contraseña");
       return;
     }
 
     if (newPassword.length < 10) {
-      alert("La nueva contraseña debe tener mínimo 10 caracteres");
+      toastError("La nueva contraseña debe tener mínimo 10 caracteres");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert("La nueva contraseña y la confirmación no coinciden");
+      toastError("La nueva contraseña y la confirmación no coinciden");
       return;
     }
 
@@ -88,7 +95,7 @@ const DetallesPerfilPage = () => {
         confirm_password: confirmPassword,
       });
 
-      alert(
+      toastSuccess(
         response?.message ||
           "Contraseña actualizada correctamente. Debes iniciar sesión de nuevo."
       );
@@ -97,12 +104,17 @@ const DetallesPerfilPage = () => {
       setNewPassword("");
       setConfirmPassword("");
 
-      logout();
-      window.location.href = "/login";
+      // Antes esto pasaba recién al cerrar el `alert()` nativo (bloqueante);
+      // con un toast (no bloqueante) hay que darle un respiro a mano para
+      // que el mensaje se alcance a leer antes de la redirección.
+      window.setTimeout(() => {
+        logout();
+        window.location.href = "/login";
+      }, 1500);
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Error al cambiar la contraseña";
-      alert(message);
+      toastError(message);
     } finally {
       setLoadingPassword(false);
     }
@@ -110,7 +122,15 @@ const DetallesPerfilPage = () => {
 
   return (
     <div className="account-section-page profile-details-page">
-      <h1>Detalles de la cuenta</h1>
+      <header className="account-subpage-header">
+        <span className="account-subpage-icon">
+          <HiOutlineUserCircle aria-hidden="true" />
+        </span>
+        <div>
+          <h1>Detalles de la cuenta</h1>
+          <p>Tu información personal y la contraseña de acceso a tu cuenta.</p>
+        </div>
+      </header>
 
       <form className="profile-details-form">
         <div className="profile-grid-two">
@@ -118,26 +138,32 @@ const DetallesPerfilPage = () => {
             <label htmlFor="nombre">
               Nombre <span>*</span>
             </label>
-            <input
-              id="nombre"
-              type="text"
-              value={nombre}
-              readOnly
-              placeholder="Nombre"
-            />
+            <div className="profile-field-icon">
+              <HiOutlineIdentification aria-hidden="true" />
+              <input
+                id="nombre"
+                type="text"
+                value={nombre}
+                readOnly
+                placeholder="Nombre"
+              />
+            </div>
           </div>
 
           <div className="profile-field">
             <label htmlFor="apellidos">
               Apellidos <span>*</span>
             </label>
-            <input
-              id="apellidos"
-              type="text"
-              value={apellidos}
-              readOnly
-              placeholder="Apellidos"
-            />
+            <div className="profile-field-icon">
+              <HiOutlineIdentification aria-hidden="true" />
+              <input
+                id="apellidos"
+                type="text"
+                value={apellidos}
+                readOnly
+                placeholder="Apellidos"
+              />
+            </div>
           </div>
         </div>
 
@@ -145,13 +171,16 @@ const DetallesPerfilPage = () => {
           <label htmlFor="nombreVisible">
             Nombre visible <span>*</span>
           </label>
-          <input
-            id="nombreVisible"
-            type="text"
-            value={nombreVisible}
-            readOnly
-            placeholder="Nombre visible"
-          />
+          <div className="profile-field-icon">
+            <HiOutlineUserCircle aria-hidden="true" />
+            <input
+              id="nombreVisible"
+              type="text"
+              value={nombreVisible}
+              readOnly
+              placeholder="Nombre visible"
+            />
+          </div>
           <small>
             Así será como se mostrará tu nombre en la sección de tu cuenta.
           </small>
@@ -161,54 +190,69 @@ const DetallesPerfilPage = () => {
           <label htmlFor="correo">
             Dirección de correo electrónico <span>*</span>
           </label>
-          <input
-            id="correo"
-            type="email"
-            value={user?.correo || ""}
-            readOnly
-            placeholder="Correo electrónico"
-          />
+          <div className="profile-field-icon">
+            <HiOutlineEnvelope aria-hidden="true" />
+            <input
+              id="correo"
+              type="email"
+              value={user?.correo || ""}
+              readOnly
+              placeholder="Correo electrónico"
+            />
+          </div>
         </div>
       </form>
 
       <div className="profile-password-box">
-        <h2>Cambio de contraseña</h2>
+        <h2>
+          <HiOutlineLockClosed aria-hidden="true" style={{ marginRight: "0.5em" }} />
+          Cambio de contraseña
+        </h2>
 
         <form className="profile-password-form" onSubmit={handleChangePassword}>
           <div className="profile-field">
             <label htmlFor="currentPassword">Contraseña actual</label>
-            <input
-              id="currentPassword"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Ingresa tu contraseña actual"
-              required
-            />
+            <div className="profile-field-icon">
+              <HiOutlineLockClosed aria-hidden="true" />
+              <input
+                id="currentPassword"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Ingresa tu contraseña actual"
+                required
+              />
+            </div>
           </div>
 
           <div className="profile-field">
             <label htmlFor="newPassword">Nueva contraseña</label>
-            <input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Ingresa tu nueva contraseña"
-              required
-            />
+            <div className="profile-field-icon">
+              <HiOutlineLockClosed aria-hidden="true" />
+              <input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Ingresa tu nueva contraseña"
+                required
+              />
+            </div>
           </div>
 
           <div className="profile-field">
             <label htmlFor="confirmPassword">Confirmar nueva contraseña</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirma tu nueva contraseña"
-              required
-            />
+            <div className="profile-field-icon">
+              <HiOutlineLockClosed aria-hidden="true" />
+              <input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirma tu nueva contraseña"
+                required
+              />
+            </div>
           </div>
 
           <button

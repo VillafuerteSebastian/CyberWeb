@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { HiChevronDown } from "react-icons/hi2";
 import { HiAdjustmentsHorizontal, HiXMark } from "react-icons/hi2";
+import { HiOutlineArrowPath, HiOutlineFaceFrown } from "react-icons/hi2";
+import { HiOutlineClock, HiOutlineTag } from "react-icons/hi2";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
 import categoryService, { type ArbolCategoria } from "../../services/categoryService";
 import { formatPrice } from "../../utils/format";
@@ -35,6 +37,8 @@ type Product = {
   atributos: { nombre: string; valor: string }[];
   stock: number;
   image?: string;
+  // Sin stock propio, se consigue solo por pedido especial.
+  porEncargo: boolean;
 };
 
 // Orden por defecto al entrar a una categoría: precio de menor a mayor, en
@@ -206,6 +210,7 @@ const CategoryPage = () => {
             atributos: Array.isArray(product.atributos) ? product.atributos : [],
             stock: Number(product.stock ?? 0),
             image: product.image || "/placeholder-product.png",
+            porEncargo: product.por_encargo === true,
           };
         });
 
@@ -602,7 +607,10 @@ return (
       {!loading && products.length > 0 && (
         <aside className={`filters-sidebar ${mobileFiltersOpen ? "mobile-open" : ""}`}>
           <div className="filters-sidebar-header">
-            <h3>Filtros</h3>
+            <h3>
+              <HiAdjustmentsHorizontal aria-hidden="true" />
+              Filtros
+            </h3>
             <div className="filters-sidebar-header-actions">
               <button className="reset-filters-btn" onClick={resetFilters}>
                 Limpiar
@@ -736,13 +744,19 @@ return (
 
       <div className="category-content">
         {loading ? (
-          <div className="empty-category">
-            <h2>Cargando productos...</h2>
+          <div className="empty-state empty-category">
+            <span className="empty-state-icon">
+              <HiOutlineArrowPath aria-hidden="true" />
+            </span>
+            <h3>Cargando productos...</h3>
             <p>Espera un momento mientras se obtiene el catálogo.</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="empty-category">
-            <h2>No hay productos con esos filtros</h2>
+          <div className="empty-state empty-category">
+            <span className="empty-state-icon">
+              <HiOutlineFaceFrown aria-hidden="true" />
+            </span>
+            <h3>No hay productos con esos filtros</h3>
             <p>Prueba con otra combinación de marca, precio o tipo.</p>
           </div>
         ) : (
@@ -761,7 +775,13 @@ return (
                   <div className="product-card-image-wrap">
                     {onSale && (
                       <span className="product-sale-badge">
+                        <HiOutlineTag aria-hidden="true" />
                         -{Math.round(((product.precio - effectivePrice) / product.precio) * 100)}%
+                      </span>
+                    )}
+                    {product.porEncargo && (
+                      <span className="preorder-ribbon">
+                        <HiOutlineClock aria-hidden="true" /> Por encargo
                       </span>
                     )}
                     <img

@@ -41,6 +41,8 @@ export type CategoryItem = {
    * sobrevive el paso por localStorage — se necesita el string crudo para
    * poder recalcular `icon` al restaurar desde caché. */
   icono?: string;
+  /** Orden manual frente a las demás categorías raíz (menor = primero). */
+  orden?: number;
   sections: CategorySection[];
   _id?: string;
 };
@@ -133,6 +135,7 @@ const convertApiToCategoryData = (apiData: any[], allCategories: Categoria[]): C
       _id: categoryIdMap.get(cat.categoria),
       icon: getCategoryIcon(cat.nombre_categoria, cat.categoria, cat.icono),
       icono: cat.icono || undefined,
+      orden: cat.orden ?? 0,
       sections: [],
     };
 

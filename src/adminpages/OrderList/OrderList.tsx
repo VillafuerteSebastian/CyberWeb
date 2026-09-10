@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import { HiOutlineCube, HiOutlineDocumentText, HiOutlineXCircle } from "react-icons/hi2";
 import orderService from "../../services/orderService";
+import productService from "../../services/productService";
 import { formatPrice } from "../../utils/format";
+import { toastError } from "../../components/Notify/notify";
 import "./OrderList.css";
 
 type OrderItem = {
   id: string | number;
+  productId: string | null;
   name: string;
   price: number;
   quantity: number;
-  image: string;
   available?: boolean | null;
 };
 
@@ -40,6 +43,10 @@ const AdminOrders = () => {
   >("all");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Miniatura por product_id. orden_items no guarda la imagen del producto
+  // (solo nombre/precio/cantidad al momento de la compra), así que se
+  // completa aparte con una sola consulta por lote a productos.
+  const [productImages, setProductImages] = useState<Record<string, string>>({});
 
   const mapStatus = (status: string): Order["status"] => {
     switch ((status || "").toUpperCase()) {
@@ -80,10 +87,10 @@ const AdminOrders = () => {
         deliveryMethod: mapDeliveryMethod(order.delivery_method || undefined),
         items: (order.orden_items || []).map((item) => ({
           id: item.id,
+          productId: item.product_id || null,
           name: item.nombre,
           price: Number(item.precio_unitario || 0),
           quantity: Number(item.cantidad || 0),
-          image: "/logo.png",
           available:
             item.available === true || item.available === false
               ? item.available
@@ -98,8 +105,17 @@ const AdminOrders = () => {
         if (!prev) return normalized[0];
         return normalized.find((o) => String(o.id) === String(prev.id)) || normalized[0];
       });
+
+      const productIds = normalized.flatMap((order) =>
+        order.items.map((item) => item.productId).filter((id): id is string => Boolean(id))
+      );
+
+      productService
+        .getProductImagesByIds(productIds)
+        .then(setProductImages)
+        .catch((err) => console.error("Error obteniendo imágenes de productos:", err));
     } catch (error: any) {
-      alert(error?.message || "Error al cargar pedidos");
+      toastError(error?.message || "Error al cargar pedidos");
     } finally {
       setLoading(false);
     }
@@ -163,7 +179,7 @@ const AdminOrders = () => {
         ...extraData,
       }));
     } catch (error: any) {
-      alert(error?.message || "Error al actualizar pedido");
+      toastError(error?.message || "Error al actualizar pedido");
     } finally {
       setSaving(false);
     }
@@ -188,7 +204,7 @@ const AdminOrders = () => {
         ),
       }));
     } catch (error: any) {
-      alert(error?.message || "Error al actualizar disponibilidad");
+      toastError(error?.message || "Error al actualizar disponibilidad");
     } finally {
       setSaving(false);
     }
@@ -213,7 +229,7 @@ const AdminOrders = () => {
     if (!selectedOrder) return;
 
     if (!reason.trim()) {
-      alert("Debes escribir un motivo de cancelación.");
+      toastError("Debes escribir un motivo de cancelación.");
       return;
     }
 
@@ -318,7 +334,7 @@ Por favor envíanos el comprobante para coordinar el envío.`;
     const phone = formatPhoneForWhatsApp(selectedOrder.phone);
 
     if (!phone) {
-      alert("Este pedido no tiene un número de teléfono válido.");
+      toastError("Este pedido no tiene un número de teléfono válido.");
       return;
     }
 
@@ -511,7 +527,7 @@ Por favor envíanos el comprobante para coordinar el envío.`;
                               title="Ver motivo"
                               type="button"
                             >
-                              📝
+                              <HiOutlineDocumentText aria-hidden="true" />
                             </button>
                           )}
                         </div>
@@ -524,10 +540,32 @@ Por favor envíanos el comprobante para coordinar el envío.`;
 
                         <div className="companions-full">
                           <ul className="order-items-list enhanced">
-                            {selectedOrder.items.map((item) => (
+                            {selectedOrder.items.map((item) => {
+                              const image = item.productId
+                                ? productImages[item.productId]
+                                : undefined;
+
+                              return (
                               <li key={`${selectedOrder.id}-${item.id}`}>
                                 <div className="order-item-main">
-                                  <span>{item.name}</span>
+                                  <span className="order-item-name">
+                                    {image ? (
+                                      <img
+                                        src={image}
+                                        alt=""
+                                        className="order-item-thumb"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = "none";
+                                        }}
+                                      />
+                                    ) : (
+                                      <HiOutlineCube
+                                        className="order-item-icon"
+                                        aria-hidden="true"
+                                      />
+                                    )}
+                                    {item.name}
+                                  </span>
                                   <span>Cant: {item.quantity}</span>
                                   <span>{formatPrice(item.price)}</span>
                                 </div>
@@ -578,7 +616,8 @@ Por favor envíanos el comprobante para coordinar el envío.`;
                                   </div>
                                 )}
                               </li>
-                            ))}
+                              );
+                            })}
                           </ul>
                         </div>
                       </div>
@@ -643,7 +682,10 @@ Por favor envíanos el comprobante para coordinar el envío.`;
       {showRejectModal && selectedOrder && (
         <div className="modal-overlay">
           <div className="modal">
-            <h3 style={{ textAlign: "center" }}>Cancelar pedido ❌</h3>
+            <h3 style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4em" }}>
+              <HiOutlineXCircle aria-hidden="true" color="var(--danger)" />
+              Cancelar pedido
+            </h3>
 
             <p><strong>Pedido:</strong> #{displayOrderId(selectedOrder)}</p>
             <p><strong>Cliente:</strong> {selectedOrder.customerName}</p>

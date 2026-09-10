@@ -8,6 +8,9 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiChevronLeft,
   HiChevronRight,
+  HiOutlineShoppingBag,
+  HiOutlineTag,
+  HiOutlineClock,
 } from "react-icons/hi2";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../../context/CartContext";
@@ -30,6 +33,17 @@ type ProductCategoriaExtra = {
   tipos: ProductType[];
 };
 
+// "guitarras-electricas" -> "Guitarras Electricas" — mismo criterio que
+// CategoryPage/ProductDetail para mostrar el slug de una subcategoría como
+// etiqueta legible sin tener que traer el árbol de categorías completo acá.
+const prettifySlug = (value?: string) => {
+  if (!value) return "";
+  return value
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 type Product = {
   id: string;
   nombre: string;
@@ -43,6 +57,8 @@ type Product = {
   stock: number;
   image?: string;
   available?: boolean;
+  // Sin stock propio, se consigue solo por pedido especial.
+  porEncargo?: boolean;
 };
 
 const TRUST_BADGES = [
@@ -98,6 +114,7 @@ const ProductCard = memo(({ product, onAddToCart, onNavigate }: {
 
         {onSale && (
           <span className="sale-badge">
+            <HiOutlineTag aria-hidden="true" />
             -{Math.round(((product.precio - effectivePrice) / product.precio) * 100)}%
           </span>
         )}
@@ -108,6 +125,12 @@ const ProductCard = memo(({ product, onAddToCart, onNavigate }: {
 
         {lowStock && (
           <span className="low-stock-badge">¡Últimas {product.stock}!</span>
+        )}
+
+        {isAvailable && product.porEncargo && (
+          <span className="preorder-ribbon">
+            <HiOutlineClock aria-hidden="true" /> Por encargo
+          </span>
         )}
 
         {/* Versión compacta (solo móvil): ícono flotando sobre la imagen,
@@ -182,8 +205,8 @@ const Home = () => {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
 
   const carouselRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  // Qué "cara" del carrusel (qué subcategoría) se está mostrando ahora mismo.
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
 
   // Categorías para el bloque "Comprá por categoría": se cargan al montar y
   // se refrescan solas si el admin agrega/edita/borra algo (mismo evento que
@@ -244,6 +267,7 @@ const Home = () => {
           stock: Number(product.stock ?? 0),
           image: product.image || "/placeholder-product.png",
           available: product.available !== false,
+          porEncargo: product.por_encargo === true,
         }));
 
         setProducts(formattedProducts);
@@ -258,93 +282,89 @@ const Home = () => {
     fetchProducts();
   }, []);
 
-  // Cantidad objetivo de tarjetas en el carrusel de destacados. Si el
-  // catálogo tiene menos productos que esto, el carrusel simplemente muestra
-  // todos los que haya.
-  const FEATURED_TARGET_COUNT = 10;
+  // Cuántos productos como máximo se cargan por subcategoría (una "cara"
+  // del carrusel). Si la subcategoría tiene menos, se muestran todos los
+  // que haya.
+  const SECTION_PRODUCT_COUNT = 10;
 
-  // Productos del carrusel de destacados: al menos uno de cada "sección"
-  // (categoría + subcategoría + tipo) del catálogo, y si con eso no se llega
-  // a FEATURED_TARGET_COUNT, se suman más productos (dos o más por sección)
-  // hasta completarlo o quedarse sin productos distintos. Un producto puede
-  // pertenecer a varias secciones a la vez si además está listado en
-  // categorías adicionales (`categorias_extra`).
-  const featuredProducts = useMemo(() => {
-    const buckets = new Map<string, Product[]>();
+  // Una sección = una subcategoría, con hasta SECTION_PRODUCT_COUNT
+  // productos de esa subcategoría. Cada "cara" del carrusel (cada vez que
+  // se pasa con la flecha o el auto-avance) muestra una sección distinta,
+  // en vez de una sola lista mezclada de productos de todas las
+  // subcategorías a la vez. Un producto puede aparecer en más de una
+  // sección si además está listado en categorías adicionales
+  // (`categorias_extra`).
+  type FeaturedSection = { key: string; label: string; products: Product[] };
 
-    const addToBucket = (categoria: string, subcategoria: string, tipo: string, product: Product) => {
+  const featuredSections = useMemo<FeaturedSection[]>(() => {
+    const buckets = new Map<string, FeaturedSection>();
+
+    const addToBucket = (categoria: string, subcategoria: string, product: Product) => {
       if (!categoria) return;
-      const key = `${categoria}::${subcategoria || "general"}::${tipo || "general"}`;
-      const bucket = buckets.get(key);
-      if (bucket) {
-        if (!bucket.some((p) => p.id === product.id)) bucket.push(product);
-      } else {
-        buckets.set(key, [product]);
+      const key = `${categoria}::${subcategoria || "general"}`;
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {
+          key,
+          label: prettifySlug(subcategoria || categoria),
+          products: [],
+        };
+        buckets.set(key, bucket);
+      }
+      if (
+        bucket.products.length < SECTION_PRODUCT_COUNT &&
+        !bucket.products.some((p) => p.id === product.id)
+      ) {
+        bucket.products.push(product);
       }
     };
 
     products.forEach((product) => {
-      addToBucket(product.categoria, product.tipos[0]?.tipo || "", product.tipos[1]?.tipo || "", product);
+      addToBucket(product.categoria, product.tipos[0]?.tipo || "", product);
       product.categorias_extra.forEach((extra) => {
-        addToBucket(extra.categoria, extra.tipos?.[0]?.tipo || "", extra.tipos?.[1]?.tipo || "", product);
+        addToBucket(extra.categoria, extra.tipos?.[0]?.tipo || "", product);
       });
     });
 
-    const sectionKeys = Array.from(buckets.keys()).sort((a, b) => a.localeCompare(b));
-
-    const selected: Product[] = [];
-    const selectedIds = new Set<string>();
-
-    const takeNextFrom = (key: string): boolean => {
-      const bucket = buckets.get(key)!;
-      const next = bucket.find((p) => !selectedIds.has(p.id));
-      if (!next) return false;
-      selected.push(next);
-      selectedIds.add(next.id);
-      return true;
-    };
-
-    // Primera pasada: un producto de cada sección.
-    sectionKeys.forEach((key) => takeNextFrom(key));
-
-    // Si faltan productos para llegar al objetivo, se hacen rondas
-    // adicionales tomando el siguiente producto disponible de cada sección
-    // (dos o más por sección, si esa sección tiene stock de sobra) hasta
-    // completar el objetivo o agotar productos distintos.
-    let addedInLastPass = true;
-    while (selected.length < FEATURED_TARGET_COUNT && addedInLastPass) {
-      addedInLastPass = false;
-      for (const key of sectionKeys) {
-        if (selected.length >= FEATURED_TARGET_COUNT) break;
-        if (takeNextFrom(key)) addedInLastPass = true;
-      }
-    }
-
-    return selected;
+    return Array.from(buckets.values())
+      .filter((section) => section.products.length > 0)
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [products]);
 
-  const updateCarouselScrollState = useCallback(() => {
-    const el = carouselRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-
+  // Si el catálogo cambia (recarga, admin agrega/borra) y la cara actual ya
+  // no existe, vuelve a la primera en vez de quedar apuntando a un índice
+  // vacío.
   useEffect(() => {
-    updateCarouselScrollState();
-  }, [featuredProducts, updateCarouselScrollState]);
+    if (currentSectionIndex >= featuredSections.length) {
+      setCurrentSectionIndex(0);
+    }
+  }, [featuredSections, currentSectionIndex]);
 
-  const handleCarouselScroll = useCallback((direction: "left" | "right") => {
-    const el = carouselRef.current;
-    if (!el) return;
-    const amount = el.clientWidth * 0.85;
-    el.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
-  }, []);
+  const currentSection = featuredSections[currentSectionIndex];
+  const canPageSections = featuredSections.length > 1;
 
-  // Auto-avance del carrusel: cada pocos segundos avanza solo una "página",
-  // y al llegar al final vuelve al inicio en vez de quedarse trabado ahí.
-  // Se pausa mientras el usuario interactúa (mouse encima o toque) para no
-  // pelearle el scroll a alguien que está mirando un producto, y respeta la
+  const goToSection = useCallback(
+    (direction: "left" | "right") => {
+      setCurrentSectionIndex((prev) => {
+        const count = featuredSections.length;
+        if (count === 0) return 0;
+        return direction === "left"
+          ? (prev - 1 + count) % count
+          : (prev + 1) % count;
+      });
+    },
+    [featuredSections.length]
+  );
+
+  // Cada vez que cambia la cara, el carrusel arranca desde el principio en
+  // vez de conservar el scroll horizontal de la sección anterior.
+  useEffect(() => {
+    carouselRef.current?.scrollTo({ left: 0 });
+  }, [currentSectionIndex]);
+
+  // Auto-avance: cada pocos segundos pasa a la siguiente subcategoría. Se
+  // pausa mientras el usuario interactúa (mouse encima o toque) para no
+  // cambiarle la cara mientras está mirando un producto, y respeta la
   // preferencia de "reducir movimiento" del sistema para accesibilidad.
   const AUTOPLAY_INTERVAL_MS = 4500;
   const isInteractingRef = useRef(false);
@@ -358,23 +378,16 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    const el = carouselRef.current;
-    if (!el || featuredProducts.length === 0) return;
+    if (!canPageSections) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const id = window.setInterval(() => {
       if (isInteractingRef.current) return;
-
-      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-      if (atEnd) {
-        el.scrollTo({ left: 0, behavior: "smooth" });
-      } else {
-        el.scrollBy({ left: el.clientWidth * 0.85, behavior: "smooth" });
-      }
+      goToSection("right");
     }, AUTOPLAY_INTERVAL_MS);
 
     return () => window.clearInterval(id);
-  }, [featuredProducts]);
+  }, [canPageSections, goToSection]);
 
   const handleAddToCart = useCallback((product: Product) => {
     addToCart({
@@ -424,7 +437,10 @@ const Home = () => {
       {(categories.length > 0 ? categories : categoryData).length > 0 && (
         <section className="shop-by-category">
           <div className="section-header">
-            <h2 className="section-title">Comprá por categoría</h2>
+            <div className="section-header-text">
+              <span className="section-kicker">Catálogo</span>
+              <h2 className="section-title">Comprá por categoría</h2>
+            </div>
             <Link to="/catalogo" className="section-link">
               Ver todo el catálogo →
             </Link>
@@ -446,20 +462,27 @@ const Home = () => {
       )}
 
       <section className="trust-strip">
-        {TRUST_BADGES.map((badge) => (
-          <div className="trust-item" key={badge.title}>
-            <span className="trust-icon">{badge.icon}</span>
-            <div>
-              <strong>{badge.title}</strong>
-              <p>{badge.text}</p>
+        <div className="trust-strip-inner">
+          {TRUST_BADGES.map((badge) => (
+            <div className="trust-item" key={badge.title}>
+              <span className="trust-icon">{badge.icon}</span>
+              <div>
+                <strong>{badge.title}</strong>
+                <p>{badge.text}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
       <section className="products-section">
         <div className="section-header">
-          <h2 className="section-title">Productos destacados</h2>
+          <div className="section-header-text">
+            <span className="section-kicker">
+              {currentSection?.label || "Más vendidos"}
+            </span>
+            <h2 className="section-title">Productos destacados</h2>
+          </div>
           <Link to="/catalogo" className="section-link">
             Ver todo el catálogo →
           </Link>
@@ -471,8 +494,14 @@ const Home = () => {
               <ProductCardSkeleton key={index} />
             ))}
           </div>
-        ) : featuredProducts.length === 0 ? (
-          <p className="empty-state-text">No hay productos disponibles.</p>
+        ) : !currentSection ? (
+          <div className="empty-state">
+            <span className="empty-state-icon">
+              <HiOutlineShoppingBag aria-hidden="true" />
+            </span>
+            <h3>No hay productos disponibles</h3>
+            <p>Volvé más tarde, estamos actualizando el catálogo.</p>
+          </div>
         ) : (
           <div
             className="products-carousel-wrapper"
@@ -483,16 +512,12 @@ const Home = () => {
           >
             <CarouselArrow
               direction="left"
-              onClick={() => handleCarouselScroll("left")}
-              disabled={!canScrollLeft}
+              onClick={() => goToSection("left")}
+              disabled={!canPageSections}
             />
 
-            <div
-              className="products-carousel"
-              ref={carouselRef}
-              onScroll={updateCarouselScrollState}
-            >
-              {featuredProducts.map((product) => (
+            <div className="products-carousel" ref={carouselRef}>
+              {currentSection.products.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -504,8 +529,8 @@ const Home = () => {
 
             <CarouselArrow
               direction="right"
-              onClick={() => handleCarouselScroll("right")}
-              disabled={!canScrollRight}
+              onClick={() => goToSection("right")}
+              disabled={!canPageSections}
             />
           </div>
         )}

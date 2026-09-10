@@ -1,13 +1,14 @@
 import "./CategoryManager.css";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaArrowUp, FaArrowDown } from "react-icons/fa";
 import categoryService from "../../services/categoryService";
 import type {
   CategoriaCreate,
   CategoriaUpdate
 } from "../../services/categoryService";
 import { categoryData, getCategoryData, clearCategoryCache, getCategoryIcon } from "../../data/categoryData";
+import { toastSuccess, toastError, confirmDialog } from "../../components/Notify/notify";
 
 type CategoryLink = {
   label: string;
@@ -33,6 +34,8 @@ type CategoryItem = {
   id: string;
   name: string;
   icono?: string;
+  /** Orden manual frente a las demás categorías raíz (menor = primero). */
+  orden: number;
   sections: CategorySection[];
   _id?: string;
 };
@@ -69,6 +72,7 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           icono: category.icono,
+          orden: category.orden ?? 0,
           _id: category._id,
           sections: category.sections.map((section, sectionIndex) => ({
             title: section.title,
@@ -102,6 +106,7 @@ const CategoryManager = () => {
           id: category.id,
           name: category.name,
           icono: category.icono,
+          orden: category.orden ?? 0,
           sections: category.sections.map((section, sectionIndex) => ({
             title: section.title,
             to: section.to,
@@ -230,6 +235,13 @@ const CategoryManager = () => {
     [filteredCategories.length, itemsPerPage]
   );
 
+  // El orden manual (flechas subir/bajar) mueve la categoría dentro de la
+  // lista COMPLETA, sin filtrar — con un filtro/búsqueda activo la flecha
+  // "siguiente" visible en pantalla podría no ser la vecina real en el
+  // orden global, así que directamente se ocultan hasta limpiar filtros.
+  const canReorder =
+    !searchTerm && !categoryFilter && !subcategoryFilter && !typeFilter;
+
   const clearForms = () => {
     setEditingCategory(null);
     setEditingSection(null);
@@ -249,6 +261,7 @@ const CategoryManager = () => {
         id: cat.id,
         name: cat.name,
         icono: cat.icono,
+        orden: cat.orden ?? 0,
         _id: cat._id,
         sections: cat.sections.map((section) => ({
           ...section,
@@ -261,16 +274,16 @@ const CategoryManager = () => {
       }));
 
       setCategories(formattedCategories);
-      alert("Categorías actualizadas correctamente");
+      toastSuccess("Categorías actualizadas correctamente");
     } catch (error) {
       console.error("Error refreshing cache:", error);
-      alert("Error al actualizar las categorías");
+      toastError("Error al actualizar las categorías");
     }
   };
 
   const saveCategory = async () => {
     if (!newCategory.name.trim()) {
-      alert("Completa el nombre de la categoría");
+      toastError("Completa el nombre de la categoría");
       return;
     }
 
@@ -305,14 +318,16 @@ const CategoryManager = () => {
           id: cat.id,
           name: cat.name,
           icono: cat.icono,
+          orden: cat.orden ?? 0,
+          _id: cat._id,
           sections: cat.sections.map((section) => ({
             ...section,
             links: section.links.map((link) => ({ ...link })),
           })),
         }));
-        
+
         setCategories(formattedCategories);
-        alert("Categoría actualizada correctamente");
+        toastSuccess("Categoría actualizada correctamente");
       } else {
         await categoryService.createCategory(categoryPayload);
 
@@ -335,6 +350,8 @@ const CategoryManager = () => {
           id: cat.id,
           name: cat.name,
           icono: cat.icono,
+          orden: cat.orden ?? 0,
+          _id: cat._id,
           sections: cat.sections.map((section) => ({
             ...section,
             links: section.links.map((link) => ({ ...link })),
@@ -342,18 +359,18 @@ const CategoryManager = () => {
         }));
 
         setCategories(formattedCategories);
-        alert("Categoría creada correctamente, con su sección \"General\" lista para editar.");
+        toastSuccess("Categoría creada correctamente, con su sección \"General\" lista para editar.");
       }
 
       clearForms();
     } catch (error: any) {
-      alert(error.message || "Error al guardar categoría");
+      toastError(error.message || "Error al guardar categoría");
     }
   };
 
   const saveSection = async () => {
     if (!newSection.title.trim() || !newSection.categoryId) {
-      alert("Completa todos los campos de la sección");
+      toastError("Completa todos los campos de la sección");
       return;
     }
 
@@ -367,7 +384,7 @@ const CategoryManager = () => {
     );
 
     if (!parentCategory) {
-      alert("Categoría padre no encontrada");
+      toastError("Categoría padre no encontrada");
       return;
     }
 
@@ -388,24 +405,24 @@ const CategoryManager = () => {
         await categoryService.updateCategory(editingSection, updatePayload);
         await refreshCache();
 
-        alert("Sección actualizada correctamente");
+        toastSuccess("Sección actualizada correctamente");
       } else {
         await categoryService.createCategory(sectionPayload);
         await refreshCache();
 
-        alert("Sección creada correctamente");
+        toastSuccess("Sección creada correctamente");
       }
 
       setEditingSection(null);
       setNewSection({ title: "", subcategoria: "", categoryId: "" });
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Error al guardar sección");
+      toastError(error?.response?.data?.message || "Error al guardar sección");
     }
   };
 
   const saveLink = async () => {
     if (!newLink.label.trim() || !newLink.sectionId || !newLink.categoryId) {
-      alert("Completa todos los campos del enlace");
+      toastError("Completa todos los campos del enlace");
       return;
     }
 
@@ -423,7 +440,7 @@ const CategoryManager = () => {
     );
 
     if (!parentCategory || !parentSection) {
-      alert("Categoría o sección padre no encontrada");
+      toastError("Categoría o sección padre no encontrada");
       return;
     }
 
@@ -446,12 +463,12 @@ const CategoryManager = () => {
         await categoryService.updateCategory(editingLink, updatePayload);
         await refreshCache();
 
-        alert("Enlace actualizado correctamente");
+        toastSuccess("Enlace actualizado correctamente");
       } else {
         await categoryService.createCategory(linkPayload);
         await refreshCache();
 
-        alert("Enlace creado correctamente");
+        toastSuccess("Enlace creado correctamente");
       }
 
       setEditingLink(null);
@@ -462,18 +479,50 @@ const CategoryManager = () => {
         categoryId: "",
       });
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Error al guardar enlace");
+      toastError(error?.response?.data?.message || "Error al guardar enlace");
+    }
+  };
+
+  // Mueve una categoría raíz un lugar hacia arriba/abajo en el orden en que
+  // se muestran en el home ("Comprá por categoría") y el navbar. En vez de
+  // solo intercambiar el `orden` de las dos categorías involucradas (que no
+  // sirve de nada la primera vez, cuando todas arrancan en 0), renumera TODA
+  // la lista según la posición que quedaría tras el swap — así funciona
+  // siempre, sin depender de que ya existan valores de orden distintos.
+  const moveCategory = async (categoryId: string, direction: "up" | "down") => {
+    const index = categories.findIndex((c) => (c._id || c.id) === categoryId);
+    if (index === -1) return;
+
+    const swapIndex = direction === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= categories.length) return;
+
+    const reordered = [...categories];
+    [reordered[index], reordered[swapIndex]] = [reordered[swapIndex], reordered[index]];
+
+    const sinId = reordered.find((c) => !c._id);
+    if (sinId) {
+      toastError(
+        `"${sinId.name}" todavía no tiene id en la base de datos (recargá la página con "Actualizar Caché" e intentá de nuevo).`
+      );
+      return;
+    }
+
+    try {
+      await Promise.all(
+        reordered.map((cat, i) => categoryService.updateCategory(cat._id as string, { orden: i }))
+      );
+      await refreshCache();
+    } catch (error: any) {
+      toastError(error.message || "Error al reordenar categorías");
     }
   };
 
   const deleteCategory = async (categoryId: string) => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de eliminar esta categoría? Se eliminarán todas sus secciones y enlaces."
-      )
-    ) {
-      return;
-    }
+    const confirmado = await confirmDialog(
+      "¿Estás seguro de eliminar esta categoría? Se eliminarán todas sus secciones y enlaces.",
+      { title: "Eliminar categoría", confirmText: "Eliminar", danger: true }
+    );
+    if (!confirmado) return;
 
     try {
       await categoryService.deleteCategory(categoryId);
@@ -482,20 +531,18 @@ const CategoryManager = () => {
       setCategories((prev) =>
         prev.filter((category) => (category._id || category.id) !== categoryId)
       );
-      alert("Categoría eliminada correctamente");
+      toastSuccess("Categoría eliminada correctamente");
     } catch (error: any) {
-      alert(error.message || "Error al eliminar categoría");
+      toastError(error.message || "Error al eliminar categoría");
     }
   };
 
   const deleteSection = async (sectionId: string) => {
-    if (
-      !window.confirm(
-        "¿Estás seguro de eliminar esta sección? Se eliminarán todos sus enlaces."
-      )
-    ) {
-      return;
-    }
+    const confirmado = await confirmDialog(
+      "¿Estás seguro de eliminar esta sección? Se eliminarán todos sus enlaces.",
+      { title: "Eliminar sección", confirmText: "Eliminar", danger: true }
+    );
+    if (!confirmado) return;
 
     try {
       await categoryService.deleteCategory(sectionId);
@@ -510,16 +557,19 @@ const CategoryManager = () => {
         }))
       );
 
-      alert("Sección eliminada correctamente");
+      toastSuccess("Sección eliminada correctamente");
     } catch (error: any) {
-      alert(error.message || "Error al eliminar sección");
+      toastError(error.message || "Error al eliminar sección");
     }
   };
 
   const deleteLink = async (linkId: string) => {
-    if (!window.confirm("¿Estás seguro de eliminar este enlace?")) {
-      return;
-    }
+    const confirmado = await confirmDialog("¿Estás seguro de eliminar este enlace?", {
+      title: "Eliminar enlace",
+      confirmText: "Eliminar",
+      danger: true,
+    });
+    if (!confirmado) return;
 
     try {
       await categoryService.deleteCategory(linkId);
@@ -535,9 +585,9 @@ const CategoryManager = () => {
         }))
       );
 
-      alert("Enlace eliminado correctamente");
+      toastSuccess("Enlace eliminado correctamente");
     } catch (error: any) {
-      alert(error.message || "Error al eliminar enlace");
+      toastError(error.message || "Error al eliminar enlace");
     }
   };
 
@@ -694,8 +744,14 @@ const CategoryManager = () => {
               <span>{filteredCategories.length} categorías visibles</span>
             </div>
 
-            {paginatedCategories.map((category) => (
-              <div key={category._id || category.id} className="category-section">
+            {paginatedCategories.map((category) => {
+              const categoryId = category._id || category.id;
+              const globalIndex = categories.findIndex(
+                (c) => (c._id || c.id) === categoryId
+              );
+
+              return (
+              <div key={categoryId} className="category-section">
                 <div className="category-header">
                   <div>
                     <h3>
@@ -708,6 +764,29 @@ const CategoryManager = () => {
                   </div>
 
                   <div className="category-actions">
+                    {canReorder && (
+                      <>
+                        <button
+                          type="button"
+                          className="icon-btn move-btn"
+                          title="Subir"
+                          disabled={globalIndex <= 0}
+                          onClick={() => moveCategory(categoryId, "up")}
+                        >
+                          <FaArrowUp />
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-btn move-btn"
+                          title="Bajar"
+                          disabled={globalIndex < 0 || globalIndex >= categories.length - 1}
+                          onClick={() => moveCategory(categoryId, "down")}
+                        >
+                          <FaArrowDown />
+                        </button>
+                      </>
+                    )}
+
                     <button
                       type="button"
                       className="icon-btn edit-btn"
@@ -800,7 +879,7 @@ const CategoryManager = () => {
                             className="icon-btn edit-btn small"
                             onClick={() => {
                               if (!section._id) {
-                                alert(
+                                toastError(
                                   "Esta sección todavía no existe en la base de datos (es la sección \"General\" automática). Primero creála con el formulario \"Agregar Sección\" de esta categoría; luego sí vas a poder editarla o eliminarla."
                                 );
                                 return;
@@ -823,7 +902,7 @@ const CategoryManager = () => {
                             className="icon-btn delete-btn small"
                             onClick={() => {
                               if (!section._id) {
-                                alert(
+                                toastError(
                                   "Esta sección todavía no existe en la base de datos (es la sección \"General\" automática). Primero creála con el formulario \"Agregar Sección\" de esta categoría; luego sí vas a poder editarla o eliminarla."
                                 );
                                 return;
@@ -902,7 +981,7 @@ const CategoryManager = () => {
                                 className="icon-btn edit-btn tiny"
                                 onClick={() => {
                                   if (!link._id) {
-                                    alert(
+                                    toastError(
                                       "Este tipo todavía no existe en la base de datos. Primero creá la sección real (\"Agregar Sección\") y luego agregá el tipo con \"Agregar Tipo / Enlace\"."
                                     );
                                     return;
@@ -928,7 +1007,7 @@ const CategoryManager = () => {
                                 className="icon-btn delete-btn tiny"
                                 onClick={() => {
                                   if (!link._id) {
-                                    alert(
+                                    toastError(
                                       "Este tipo todavía no existe en la base de datos. Primero creá la sección real (\"Agregar Sección\") y luego agregá el tipo con \"Agregar Tipo / Enlace\"."
                                     );
                                     return;
@@ -947,7 +1026,8 @@ const CategoryManager = () => {
                   ))}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {totalPages > 1 && (
               <div className="admin-pagination">

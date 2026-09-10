@@ -3,6 +3,7 @@ import { Suspense, lazy } from "react";
 import MainLayout from "./layouts/MainLayout";
 import AdminRoute from "./components/AdminRoute";
 import { CartProvider } from "./context/CartContext";
+import { NotificationCenter } from "./components/Notify/notify";
 
 // Lazy loaded components
 const Home = lazy(() => import("./pages/home/Home"));
@@ -26,6 +27,7 @@ const CategoryManager = lazy(() => import("./adminpages/AdminCategories/Category
 function App() {
   return (
     <CartProvider>
+      <NotificationCenter />
       <Suspense fallback={<div className="loading">Cargando...</div>}>
         <Routes>
           <Route element={<MainLayout />}>

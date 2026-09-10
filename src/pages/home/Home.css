@@ -3,18 +3,21 @@
   flex-direction: column;
 }
 
-/* ===== HERO ===== */
+/* ===== HERO =====
+   Bajo y con poco relleno a propósito: es la presentación, no el
+   contenido — la prioridad de la página es llegar rápido a "Comprá por
+   categoría" y a los productos, sin scrollear un banner enorme primero. */
 .hero-wrapper {
   display: flex;
   justify-content: center;
-  padding: 2.5rem 2rem 1rem;
+  padding: 1.25rem 2rem 0;
 }
 
 .hero {
   position: relative;
   width: 100%;
   max-width: 1280px;
-  min-height: 420px;
+  min-height: 240px;
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-elev-lg);
@@ -40,7 +43,7 @@
   right: -60px;
   width: 420px;
   height: 420px;
-  background: radial-gradient(circle, rgba(34, 211, 238, 0.25), transparent 70%);
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.16), transparent 70%);
   border-radius: 50%;
   z-index: 2;
   pointer-events: none;
@@ -62,11 +65,11 @@
 .hero-content {
   position: relative;
   z-index: 3;
-  padding: 2.5rem 3rem 3rem;
-  max-width: 620px;
+  padding: 1.5rem 2.25rem 1.75rem;
+  max-width: 580px;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0.5rem;
 }
 
 /* La cabecera del hero vive sobre una foto con velo oscuro (.hero::after),
@@ -80,17 +83,17 @@
 }
 
 .hero-content h1 {
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  line-height: 1.1;
+  font-size: clamp(1.5rem, 2.8vw, 2.1rem);
+  line-height: 1.15;
   color: #ffffff;
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
 }
 
 .hero-content p {
   color: rgba(255, 255, 255, 0.88);
-  font-size: 1rem;
-  line-height: 1.6;
-  max-width: 480px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 460px;
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
 }
 
@@ -103,10 +106,10 @@
 
 .hero-cta-primary,
 .hero-cta-secondary {
-  padding: 0.85rem 1.6rem;
+  padding: 0.7rem 1.4rem;
   border-radius: var(--radius-pill);
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
@@ -133,48 +136,55 @@
   color: #67e8f9;
 }
 
-/* ===== TRUST STRIP ===== */
+/* ===== TRUST STRIP =====
+   Antes eran 4 mini-cards blancas sueltas — el mismo patrón de "card con
+   borde" que las category-tiles y los product-card justo arriba/abajo. Acá
+   se unifican en una sola barra continua con separadores internos, para
+   que se lea como una franja de confianza distinta, no una tercera grilla
+   de cards repetida. */
 .trust-strip {
   max-width: 1280px;
-  margin: 0.5rem auto 0;
+  margin: 1rem auto 0;
   width: 100%;
-  padding: 1.75rem 2rem;
+  padding: 0 2rem;
+}
+
+.trust-strip-inner {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elev-sm);
 }
 
 .trust-item {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
-  padding: 1rem 1.1rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  border-right: 1px solid var(--border-subtle);
 }
 
-.trust-item:hover {
-  border-color: var(--border-accent);
-  transform: translateY(-2px);
+.trust-item:last-child {
+  border-right: none;
 }
 
 .trust-icon {
   flex-shrink: 0;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 1.3rem;
+  font-size: 1.1rem;
 }
 
 .trust-item strong {
   display: block;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   color: var(--text-primary);
 }
 
@@ -184,13 +194,28 @@
   color: var(--text-muted);
 }
 
-/* ===== ENCABEZADO DE SECCIÓN (título + link "ver todo") ===== */
+/* ===== ENCABEZADO DE SECCIÓN (kicker + título + link "ver todo") ===== */
 .section-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.section-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.section-kicker {
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
 }
 
 .section-title {
@@ -214,18 +239,25 @@
   opacity: 0.75;
 }
 
-/* ===== COMPRÁ POR CATEGORÍA ===== */
+/* ===== COMPRÁ POR CATEGORÍA =====
+   Banda con fondo propio (a diferencia del carrusel de destacados, que
+   queda flotando sobre el fondo de la página) para que el home tenga un
+   mínimo de ritmo entre secciones en vez de una sucesión plana de bloques
+   iguales. */
 .shop-by-category {
   max-width: 1280px;
-  margin: 0 auto;
+  margin: 1rem auto 0;
   width: 100%;
-  padding: 2rem 2rem 0;
+  padding: 1.15rem 1.5rem;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 0.85rem;
 }
 
 .category-tile {
@@ -233,8 +265,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 1.25rem 0.75rem;
+  gap: 0.5rem;
+  padding: 0.9rem 0.6rem;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -251,16 +283,16 @@
 .category-tile-icon {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 1.5rem;
+  font-size: 1.2rem;
 }
 
 .category-tile-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.25;
@@ -270,16 +302,19 @@
   overflow: hidden;
 }
 
-/* ===== PRODUCTS SECTION ===== */
+/* ===== PRODUCTS SECTION =====
+   Es el contenido real de la tienda — más aire arriba/abajo que el resto de
+   las secciones, para que se sienta como el bloque principal del home y no
+   como un carrusel más metido entre otras franjas. */
 .products-section {
   max-width: 1280px;
   margin: 0 auto;
   width: 100%;
-  padding: 2.5rem 2rem 4rem;
+  padding: 1.5rem 2rem 4rem;
 }
 
-.empty-state-text {
-  color: var(--text-muted);
+.products-section .section-title {
+  font-size: 1.65rem;
 }
 
 /* ===== CARRUSEL DE DESTACADOS ===== */
@@ -304,7 +339,7 @@
 }
 
 .products-carousel .product-card {
-  flex: 0 0 220px;
+  flex: 0 0 250px;
   scroll-snap-align: start;
 }
 
@@ -350,7 +385,7 @@
 .product-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  padding: 1rem;
+  padding: 1.15rem;
   border-radius: var(--radius-md);
   text-align: left;
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
@@ -379,7 +414,7 @@
 
 .product-card-media img {
   width: 100%;
-  height: 150px;
+  height: 175px;
   object-fit: contain;
   padding: 0.5rem;
 }
@@ -418,13 +453,23 @@
   position: absolute;
   top: 8px;
   left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   background: var(--danger);
   color: #ffffff;
   font-size: 0.7rem;
   font-weight: 800;
-  padding: 3px 9px;
+  padding: 0.32em 0.6em;
   border-radius: var(--radius-pill);
+  box-shadow: 0 3px 10px -2px rgba(185, 28, 28, 0.55);
   z-index: 1;
+}
+
+.sale-badge svg {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
 }
 
 .product-card-price-old {
@@ -458,6 +503,10 @@
   padding: 3px 9px;
   border-radius: var(--radius-pill);
 }
+
+/* La cinta "Por encargo" (.preorder-ribbon) vive centralizada en index.css
+   — .product-card-media ya tiene position:relative + overflow:hidden, así
+   que no necesita nada extra acá para quedar bien recortada. */
 
 .add-cart-btn {
   margin-top: auto;
@@ -524,11 +573,19 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .hero {
-    min-height: 380px;
+    min-height: 220px;
   }
 
-  .trust-strip {
+  .trust-strip-inner {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trust-item {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .trust-item:nth-last-child(-n + 2) {
+    border-bottom: none;
   }
 
   .products-carousel .product-card {
@@ -538,17 +595,17 @@
 
 @media (max-width: 768px) {
   .hero-wrapper {
-    padding: 1.5rem 1rem 0.5rem;
+    padding: 1rem 1rem 0;
   }
 
   .hero {
-    min-height: 340px;
+    min-height: 220px;
     border-radius: var(--radius-md);
     align-items: flex-end;
   }
 
   .hero-content {
-    padding: 1.5rem 1.5rem 2rem;
+    padding: 1.5rem 1.5rem 1.75rem;
     max-width: 100%;
   }
 
@@ -576,10 +633,12 @@
      apiladas a una sola fila compacta de solo ícono + etiqueta (sin la
      descripción larga, que se guarda para escritorio). */
   .trust-strip {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
     padding: 0 1rem;
     margin-top: 1rem;
+  }
+
+  .trust-strip-inner {
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .trust-item {
@@ -588,7 +647,8 @@
     justify-content: flex-start;
     text-align: center;
     gap: 0.4rem;
-    padding: 0.75rem 0.4rem;
+    padding: 0.75rem 0.35rem;
+    border-bottom: none;
   }
 
   .trust-icon {
@@ -608,14 +668,20 @@
   }
 
   .shop-by-category {
-    padding: 1.5rem 1rem 0;
+    margin-top: 1rem;
+    padding: 1rem 0.85rem;
+    border-radius: var(--radius-md);
   }
 
   .products-section {
-    padding: 2rem 1rem 3rem;
+    padding: 1.25rem 1rem 3rem;
   }
 
   .section-title {
+    font-size: 1.3rem;
+  }
+
+  .products-section .section-title {
     font-size: 1.3rem;
   }
 
@@ -624,22 +690,22 @@
   }
 
   .category-grid {
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    gap: 0.7rem;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 0.6rem;
   }
 
   .category-tile {
-    padding: 0.9rem 0.5rem;
+    padding: 0.7rem 0.4rem;
   }
 
   .category-tile-icon {
-    width: 42px;
-    height: 42px;
-    font-size: 1.2rem;
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
   }
 
   .category-tile-name {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
   .products-carousel {
@@ -718,12 +784,11 @@
 
 @media (max-width: 480px) {
   .trust-strip {
-    gap: 0.35rem;
     padding: 0 0.75rem;
   }
 
   .trust-item {
-    padding: 0.65rem 0.25rem;
+    padding: 0.65rem 0.2rem;
   }
 
   .trust-item strong {

@@ -330,6 +330,20 @@
   border-color: var(--border-accent);
 }
 
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn:disabled:hover {
+  border-color: var(--border-subtle);
+}
+
+.icon-btn.move-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 .icon-btn.edit-btn {
   color: var(--accent);
   border-color: rgba(34, 211, 238, 0.3);

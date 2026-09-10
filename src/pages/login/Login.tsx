@@ -3,6 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { loginUser } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  HiOutlineEnvelope,
+  HiOutlineLockClosed,
+  HiOutlineShoppingBag,
+  HiOutlineBolt,
+  HiOutlineTag,
+} from "react-icons/hi2";
+import { toastError } from "../../components/Notify/notify";
 import "../auth/Auth.css";
 
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
@@ -55,12 +63,12 @@ const Login = () => {
         await loadUserProfile();
         navigate("/");
       } else {
-        alert("No se pudo iniciar sesión");
+        toastError("No se pudo iniciar sesión");
       }
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Error al iniciar sesión";
-      alert(message);
+      toastError(message);
     } finally {
       setLoading(false);
     }
@@ -73,16 +81,20 @@ const Login = () => {
           <h2>Acceder</h2>
 
           <form className="auth-page-form" onSubmit={handleSubmit}>
-            <input
-              className="auth-page-input"
-              type="email"
-              placeholder="Correo electrónico"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
-            />
+            <div className="auth-input-group">
+              <HiOutlineEnvelope aria-hidden="true" />
+              <input
+                className="auth-page-input"
+                type="email"
+                placeholder="Correo electrónico"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+              />
+            </div>
 
-            <div className="password-input-container">
+            <div className="auth-input-group password-input-container">
+              <HiOutlineLockClosed aria-hidden="true" />
               <input
                 className="auth-page-input"
                 type={showPassword ? "text" : "password"}
@@ -123,11 +135,30 @@ const Login = () => {
         <div className="auth-page-divider"></div>
 
         <div className="auth-page-right">
-          <h2>Registro</h2>
+          <span className="auth-brand-mark">
+            <img src="/logo.png" alt="" />
+          </span>
+
+          <h2>¿Todavía no tenés cuenta?</h2>
           <p>
             Al registrarte podrás acceder al estado y al historial de tus
             pedidos.
           </p>
+
+          <ul className="auth-benefits">
+            <li>
+              <HiOutlineShoppingBag aria-hidden="true" />
+              Seguimiento del estado de tus pedidos
+            </li>
+            <li>
+              <HiOutlineBolt aria-hidden="true" />
+              Checkout más rápido la próxima vez
+            </li>
+            <li>
+              <HiOutlineTag aria-hidden="true" />
+              Enterate primero de ofertas y novedades
+            </li>
+          </ul>
 
           <button
             className="auth-btn-secondary"

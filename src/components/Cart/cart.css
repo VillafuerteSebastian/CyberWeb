@@ -200,9 +200,18 @@
 }
 
 .delivery-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0 0 1rem;
   font-size: 1rem;
   color: var(--text-primary);
+}
+
+.delivery-section h3 svg {
+  width: 1.1em;
+  height: 1.1em;
+  color: var(--accent-strong);
 }
 
 /* ===== Métodos de entrega como tarjetas seleccionables ===== */
@@ -236,6 +245,17 @@
   width: 17px;
   height: 17px;
   flex-shrink: 0;
+}
+
+.delivery-option-icon {
+  flex-shrink: 0;
+  width: 1.15em;
+  height: 1.15em;
+  color: var(--text-faint);
+}
+
+.delivery-option:has(input:checked) .delivery-option-icon {
+  color: var(--accent-strong);
 }
 
 .delivery-info {
@@ -288,8 +308,16 @@
 }
 
 .empty-cart-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  margin: 0 auto 1.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 2.4rem;
 }
 
 .empty-cart-content h2 {

@@ -49,6 +49,11 @@ export interface ProductoRow {
   categorias_extra: ProductoCategoriaExtra[];
   /** Atributos filtrables adicionales (ver `ProductoAtributo`). */
   atributos: ProductoAtributo[];
+  /** true si este producto no se mantiene en stock y se consigue solo por
+   * pedido especial (el cliente lo compra igual, pero la entrega tarda más).
+   * Se administra igual que el precio de oferta: con un botón en la tarjeta
+   * del producto en /admin/add-product, no desde el formulario de alta. */
+  por_encargo: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -69,6 +74,7 @@ export interface ProductoCreate {
   variantes?: ProductoVariante[];
   categorias_extra?: ProductoCategoriaExtra[];
   atributos?: ProductoAtributo[];
+  por_encargo?: boolean;
 }
 
 export type ProductoUpdate = Partial<ProductoCreate> & { available?: boolean };
@@ -183,6 +189,36 @@ class ProductService {
     return Array.from(byId.values());
   }
 
+  /**
+   * Trae solo id + imagen + nombre para un lote de productos, indexado por
+   * id — pensado para "rellenar" la miniatura de líneas de pedido, que en
+   * la tabla `orden_items` solo guardan nombre/precio/cantidad (no imagen,
+   * es una foto del producto al momento de la compra, no se duplica ahí).
+   * No filtra por `is_deleted`: un pedido viejo de un producto ya borrado
+   * debe poder seguir mostrando su foto si la fila todavía existe.
+   */
+  async getProductImagesByIds(ids: string[]): Promise<Record<string, string>> {
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) return {};
+
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("id, image")
+      .in("id", uniqueIds);
+
+    if (error) {
+      console.error("Error obteniendo imágenes de productos:", error);
+      return {};
+    }
+
+    const byId: Record<string, string> = {};
+    (data || []).forEach((row: { id: string; image: string | null }) => {
+      if (row.image) byId[row.id] = row.image;
+    });
+
+    return byId;
+  }
+
   async getProductById(id: string): Promise<ProductoRow | null> {
     const { data, error } = await supabase
       .from(TABLE)
@@ -218,6 +254,7 @@ class ProductService {
         variantes: payload.variantes || [],
         categorias_extra: payload.categorias_extra || [],
         atributos: payload.atributos || [],
+        por_encargo: payload.por_encargo ?? false,
       })
       .select("*")
       .single();

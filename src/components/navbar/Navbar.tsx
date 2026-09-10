@@ -174,10 +174,6 @@ const Navbar = () => {
     setActiveCategory(category);
   }, []);
 
-  const handleCategoryClick = useCallback((category: CategoryItem) => {
-    setActiveCategory(category);
-  }, []);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -227,12 +223,15 @@ const Navbar = () => {
 
         {!isAuthPage && (
           <form className={`search-bar ${mobileSearchOpen ? 'active' : ''}`} onSubmit={handleSearchSubmit}>
-            <input
-              type="text"
-              placeholder="Buscar productos..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className="search-bar-inner">
+              <FaSearch className="search-bar-icon" aria-hidden="true" />
+              <input
+                type="text"
+                placeholder="Buscar productos..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </form>
         )}
 
@@ -420,18 +419,18 @@ const Navbar = () => {
             >
               <div className="categories-sidebar">
                 {(categories.length > 0 ? categories : categoryData).map((category) => (
-                  <button
+                  <Link
                     key={category.id}
-                    type="button"
+                    to={`/catalogo?categoria=${category.id}`}
                     className={`category-side-item ${
                       activeCategory?.id === category.id ? "active" : ""
                     }`}
                     onMouseEnter={() => handleCategoryMouseEnterItem(category)}
-                    onClick={() => handleCategoryClick(category)}
+                    onClick={() => setMenuOpen(false)}
                   >
                     <span className="category-side-icon">{category.icon}</span>
                     <span>{category.name}</span>
-                  </button>
+                  </Link>
                 ))}
               </div>
               <div className="categories-content">
@@ -512,21 +511,36 @@ const Navbar = () => {
                 <div className="categories-sidebar">
                   {(categories.length > 0 ? categories : categoryData).map((category) => (
                     <div key={category.id}>
-                      <button
-                        type="button"
-                        className={`category-side-item ${
+                      <div
+                        className={`category-side-item-row ${
                           selectedCategory?.id === category.id ? "active" : ""
                         }`}
-                        onClick={() => setSelectedCategory(
-                          selectedCategory?.id === category.id ? null : category
-                        )}
                       >
-                        <span className="category-side-icon">{category.icon}</span>
-                        <span>{category.name}</span>
-                        <span className="category-arrow">
-                          <FaChevronRight />
-                        </span>
-                      </button>
+                        <Link
+                          to={`/catalogo?categoria=${category.id}`}
+                          className="category-side-item"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          <span className="category-side-icon">{category.icon}</span>
+                          <span>{category.name}</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          className="category-expand-btn"
+                          aria-expanded={selectedCategory?.id === category.id}
+                          aria-label={
+                            selectedCategory?.id === category.id
+                              ? `Ocultar subcategorías de ${category.name}`
+                              : `Ver subcategorías de ${category.name}`
+                          }
+                          onClick={() => setSelectedCategory(
+                            selectedCategory?.id === category.id ? null : category
+                          )}
+                        >
+                          <FaChevronRight className="category-arrow" />
+                        </button>
+                      </div>
 
                       {/* Subcategorías debajo de la categoría seleccionada */}
                       {selectedCategory?.id === category.id && (

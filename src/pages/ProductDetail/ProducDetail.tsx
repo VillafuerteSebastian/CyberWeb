@@ -5,6 +5,10 @@ import {
   HiOutlineTruck,
   HiOutlineShieldCheck,
   HiOutlineCreditCard,
+  HiOutlineArrowPath,
+  HiOutlineExclamationTriangle,
+  HiOutlineTag,
+  HiOutlineClock,
 } from "react-icons/hi2";
 import productService, { getEffectivePrice, isOnSale } from "../../services/productService";
 import { formatPrice } from "../../utils/format";
@@ -41,6 +45,8 @@ type Product = {
   atributos: AtributoProducto[];
   stock: number;
   available?: boolean;
+  // Sin stock propio, se consigue solo por pedido especial.
+  porEncargo: boolean;
 };
 
 // Señales de confianza cortas, mismas que en el home, para reforzar la
@@ -188,6 +194,7 @@ const ProductDetail = () => {
           atributos: productData.atributos || [],
           stock: Number(productData.stock ?? 0),
           available: productData.available !== false,
+          porEncargo: productData.por_encargo === true,
         });
         setActiveImageIndex(0);
       } catch (err) {
@@ -268,7 +275,10 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="pd-status-page">
+      <div className="pd-status-page empty-state">
+        <span className="empty-state-icon">
+          <HiOutlineArrowPath aria-hidden="true" />
+        </span>
         <h2>Cargando producto...</h2>
       </div>
     );
@@ -276,7 +286,10 @@ const ProductDetail = () => {
 
   if (error || !product) {
     return (
-      <div className="pd-status-page">
+      <div className="pd-status-page empty-state">
+        <span className="empty-state-icon">
+          <HiOutlineExclamationTriangle aria-hidden="true" />
+        </span>
         <h2>{error || "Producto no encontrado"}</h2>
         <Link to={getBackUrl()} className="pd-status-back">← Volver</Link>
       </div>
@@ -308,7 +321,14 @@ const ProductDetail = () => {
           <div className="pd-left">
             <div className="pd-imageWrap">
               {onSale && (
-                <span className="pd-sale-badge">-{descuentoPorcentaje}%</span>
+                <span className="pd-sale-badge">
+                  <HiOutlineTag aria-hidden="true" />-{descuentoPorcentaje}%
+                </span>
+              )}
+              {isAvailable && product.porEncargo && (
+                <span className="preorder-ribbon">
+                  <HiOutlineClock aria-hidden="true" /> Por encargo
+                </span>
               )}
               <img
                 className="pd-image"
@@ -352,7 +372,11 @@ const ProductDetail = () => {
             <div className="pd-meta-row">
               <p className="pd-brand">Marca: {product.marca}</p>
 
-              {isAvailable && (
+              {isAvailable && product.porEncargo && (
+                <span className="pd-stock pd-stock--preorder">Por encargo</span>
+              )}
+
+              {isAvailable && !product.porEncargo && (
                 <span className={`pd-stock ${lowStock ? "pd-stock--low" : "pd-stock--ok"}`}>
                   {lowStock ? `¡Últimas ${product.stock} unidades!` : "En stock"}
                 </span>
@@ -476,8 +500,19 @@ const ProductDetail = () => {
                   });
                 }}
               >
-                {isAvailable ? "Agregar al carrito" : "No disponible"}
+                {!isAvailable
+                  ? "No disponible"
+                  : product.porEncargo
+                  ? "Pedir por encargo"
+                  : "Agregar al carrito"}
               </button>
+
+              {isAvailable && product.porEncargo && (
+                <p className="pd-preorder-note">
+                  Este producto se consigue por pedido especial: el tiempo de
+                  entrega puede ser mayor al de un producto en stock.
+                </p>
+              )}
 
               <ul className="pd-trust-mini">
                 {TRUST_MINI.map((item) => (

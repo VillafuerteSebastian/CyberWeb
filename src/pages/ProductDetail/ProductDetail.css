@@ -44,12 +44,22 @@
   top: 14px;
   left: 14px;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   background: var(--danger);
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 800;
   padding: 0.35rem 0.7rem;
   border-radius: var(--radius-pill);
+  box-shadow: 0 4px 12px -2px rgba(185, 28, 28, 0.5);
+}
+
+.pd-sale-badge svg {
+  flex-shrink: 0;
+  width: 0.95em;
+  height: 0.95em;
 }
 
 /* Fondo blanco puro (no el --bg-base grisáceo del resto del sitio): así,
@@ -80,11 +90,17 @@
   transform: scale(1.04);
 }
 
+/* Fila horizontal con scroll (no wrap): con pocas fotos se ve igual que
+   antes, pero con muchas no se apelmaza en varias filas — se desliza, como
+   el carrusel de destacados del home. */
 .pd-thumbnails {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.6rem;
   margin-top: 0.9rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
 }
 
 .pd-thumbnail {
@@ -173,6 +189,25 @@
 
 .pd-stock--low::before {
   background: var(--warning);
+}
+
+.pd-stock--preorder {
+  color: var(--accent-2);
+}
+
+.pd-stock--preorder::before {
+  background: var(--accent-2);
+}
+
+.pd-preorder-note {
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: var(--accent-2-soft);
+  border: 1px solid rgba(109, 40, 217, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .pd-unavailable-badge {
@@ -278,10 +313,13 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Productos similares, debajo de la descripción */
+/* Productos similares, debajo de la descripción. Fondo `--bg-surface-2`
+   (a diferencia de `.pd-description-card`, blanca) para que no sean dos
+   tarjetas idénticas seguidas — mismo recurso que la banda "Comprá por
+   categoría" del home. */
 .pd-similar-section {
   margin-top: 1.5rem;
-  background: var(--bg-surface);
+  background: var(--bg-surface-2);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.5rem 1.75rem;
@@ -299,7 +337,7 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.9rem;
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   text-decoration: none;
@@ -596,8 +634,6 @@
 
   .pd-imageWrap {
     min-height: 420px;
-    position: sticky;
-    top: var(--navbar-height);
   }
 
   .pd-image {
